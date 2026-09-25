@@ -25,11 +25,11 @@ export class File {
 
   @Field()
   @Column('int', { nullable: true })
-  public tvEpisodeId!: number;
+  public tvEpisodeId!: number | null;
 
   @Field()
   @Column('int', { nullable: true })
-  public movieId!: number;
+  public movieId!: number | null;
 
   @ManyToOne((_type) => Movie, (movie) => movie.files)
   public movie!: Movie;

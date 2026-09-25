@@ -23,7 +23,9 @@ export function ActionsComponents() {
   const [scanLibrary, { loading: loading2 }] = useStartScanLibraryMutation({
     onCompleted: () =>
       notification.success({
-        message: 'Scan library folder started',
+        message: 'Library scan and reconciliation started',
+        description:
+          'Bobarr will scan Movies and TV Shows, import known files, repair safe associations, and log skipped ambiguous files.',
         placement: 'bottomRight',
       }),
   });
@@ -103,7 +105,7 @@ export function ActionsComponents() {
         onClick={() => scanLibrary()}
         loading={loading1 || loading2 || loading3}
       >
-        Scan library folder
+        Scan / reconcile library
       </Button>
       <Button
         size="large"

@@ -9,13 +9,7 @@ import { Logger } from 'winston';
 import { times, orderBy, flatten } from 'lodash';
 import { Job, Queue } from 'bull';
 
-import {
-  Transaction,
-  TransactionManager,
-  EntityManager,
-  Like,
-  IsNull,
-} from 'typeorm';
+import { Transaction, TransactionManager, EntityManager } from 'typeorm';
 
 import {
   filterSeries,
@@ -37,6 +31,11 @@ import { sanitize } from 'src/utils/sanitize';
 
 import { JobsService } from 'src/modules/jobs//jobs.service';
 import { TMDBService } from 'src/modules/tmdb/tmdb.service';
+import {
+  isAllowedVideoFile,
+  normalizeMediaTitle,
+  parseEpisodeFile,
+} from 'src/modules/library/reconciliation.helpers';
 
 import { MovieDAO } from 'src/entities/dao/movie.dao';
 import { TVShowDAO } from 'src/entities/dao/tvshow.dao';
@@ -198,16 +197,30 @@ export class ScanLibraryProcessor {
       });
       return { match, file: path.join(movieFolder, file) };
     });
+    const allowedFiles = files.filter(({ file }) => isAllowedVideoFile(file));
+    const skippedFiles = files.length - allowedFiles.length;
 
-    const movieInDatabase = files.find((file) => file.match?.movie);
-    const untrackedFiles = files.filter((file) => !file.match);
+    const movieInDatabase = allowedFiles.find((file) => file.match?.movie);
+    const untrackedFiles = allowedFiles.filter((file) => !file.match?.movie);
 
     if (movieInDatabase) {
       this.logger.info('movie already tracked in library', { untrackedFiles });
 
-      await forEachSeries(untrackedFiles, ({ file }) =>
-        fileDAO.save({ path: file, movieId: movieInDatabase.match?.id })
+      await forEachSeries(untrackedFiles, ({ file, match }) =>
+        fileDAO.save({
+          id: match?.id,
+          path: file,
+          movieId: movieInDatabase.match?.movie?.id,
+          tvEpisodeId: null,
+        })
       );
+
+      this.logger.info('finish processing movie', {
+        movie,
+        filesScanned: allowedFiles.length,
+        skippedFiles,
+        associationsRepaired: untrackedFiles.length,
+      });
 
       return;
     }
@@ -225,8 +238,13 @@ export class ScanLibraryProcessor {
     if (matchByTitle) {
       this.logger.info('movie already in database', { title, year });
 
-      await forEachSeries(untrackedFiles, ({ file }) =>
-        fileDAO.save({ path: file, movieId: matchByTitle.id })
+      await forEachSeries(untrackedFiles, ({ file, match }) =>
+        fileDAO.save({
+          id: match?.id,
+          path: file,
+          movieId: matchByTitle.id,
+          tvEpisodeId: null,
+        })
       );
 
       return;
@@ -289,9 +307,21 @@ export class ScanLibraryProcessor {
         tmdbId: tmdbMovie.tmdbId,
       });
 
-      await forEachSeries(untrackedFiles, ({ file }) =>
-        fileDAO.save({ path: file, movieId: match.id })
+      await forEachSeries(untrackedFiles, ({ file, match: fileMatch }) =>
+        fileDAO.save({
+          id: fileMatch?.id,
+          path: file,
+          movieId: match.id,
+          tvEpisodeId: null,
+        })
       );
+
+      this.logger.info('finish processing movie', {
+        movie,
+        filesScanned: allowedFiles.length,
+        skippedFiles,
+        associationsRepaired: untrackedFiles.length,
+      });
     } else {
       const newMovie = await movieDAO.save({
         title,
@@ -299,12 +329,25 @@ export class ScanLibraryProcessor {
         state: DownloadableMediaState.PROCESSED,
       });
 
-      await forEachSeries(untrackedFiles, ({ file }) =>
-        fileDAO.save({ path: file, movieId: newMovie.id })
+      await forEachSeries(untrackedFiles, ({ file, match }) =>
+        fileDAO.save({
+          id: match?.id,
+          path: file,
+          movieId: newMovie.id,
+          tvEpisodeId: null,
+        })
       );
 
       this.logger.info('new movie saved in database', {
         tmdbId: tmdbMovie.tmdbId,
+      });
+
+      this.logger.info('finish processing movie', {
+        movie,
+        filesScanned: allowedFiles.length,
+        skippedFiles,
+        moviesImported: 1,
+        associationsRepaired: untrackedFiles.length,
       });
     }
   }
@@ -322,14 +365,12 @@ export class ScanLibraryProcessor {
     const tvEpisodeDAO = manager!.getCustomRepository(TVEpisodeDAO);
     const fileDAO = manager!.getCustomRepository(FileDAO);
 
-    const isTVShowInDatabase = await fileDAO.findOne({
-      where: { path: Like(`%${tvshow}%`), movieId: IsNull() },
-      relations: ['tvEpisode', 'tvEpisode.tvShow'],
-    });
-
-    let tvShow = isTVShowInDatabase
-      ? isTVShowInDatabase?.tvEpisode?.tvShow
-      : null;
+    const knownTVShows = await tvShowDAO.find();
+    let tvShow =
+      knownTVShows.find(
+        (candidate) =>
+          normalizeMediaTitle(candidate.title) === normalizeMediaTitle(tvshow)
+      ) || null;
 
     if (!tvShow) {
       const [tmdbResult] = await this.tmdbService.searchTVShow(tvshow, {
@@ -368,73 +409,101 @@ export class ScanLibraryProcessor {
         ).then(flatten)
       );
 
+    const summary = {
+      filesScanned: 0,
+      episodesImported: 0,
+      associationsCreated: 0,
+      associationsRepaired: 0,
+      ambiguousFilesSkipped: 0,
+      nonVideoFilesSkipped: 0,
+    };
+
     await forEachSeries(episodes, async (episodePath) => {
-      if (
-        // skip non-video files
-        episodePath.endsWith('.srt') ||
-        episodePath.endsWith('.nfo') ||
-        episodePath.startsWith('.')
-      ) {
+      if (!isAllowedVideoFile(episodePath)) {
+        summary.nonVideoFilesSkipped += 1;
         return;
       }
 
+      summary.filesScanned += 1;
       this.logger.info(`start processing episode`, {
         episode: path.basename(episodePath),
       });
 
-      const file = await fileDAO.findOne({ where: { path: episodePath } });
+      const parsedEpisode = parseEpisodeFile(episodePath);
 
-      if (file) {
-        this.logger.info(`episode already tracked, skip`);
+      if (!parsedEpisode) {
+        summary.ambiguousFilesSkipped += 1;
+        this.logger.warn('could not confidently parse episode filename', {
+          episodePath,
+        });
         return;
       }
 
-      const season = path.dirname(episodePath);
-      const [seasonNumber] = /\d+/.exec(season) || [];
-
-      if (!seasonNumber) {
-        this.logger.error('could not parse season number', {
-          season,
-          seasonNumber,
-        });
-        throw new Error('could not parse season number');
-      }
-
-      // parse episode number from title
-      const [, episodeNumber] = /E(\d+)/.exec(episodePath) || [];
-
       this.logger.info(`found season number and episode`, {
-        seasonNumber,
-        episodeNumber,
+        seasonNumber: parsedEpisode.seasonNumber,
+        episodeNumber: parsedEpisode.episodeNumber,
       });
 
       const tvSeason = await tvSeasonDAO.findOrCreate(
         {
           tvShowId: tvShow!.id,
-          seasonNumber: parseInt(seasonNumber, 10),
+          seasonNumber: parsedEpisode.seasonNumber,
         },
-        DownloadableMediaState.PROCESSED
+        DownloadableMediaState.DOWNLOADED
       );
+
+      if (
+        tvSeason.state === DownloadableMediaState.SEARCHING ||
+        tvSeason.state === DownloadableMediaState.DOWNLOADING
+      ) {
+        await tvSeasonDAO.save({
+          id: tvSeason.id,
+          state: DownloadableMediaState.DOWNLOADED,
+        });
+      }
 
       const episode = await tvEpisodeDAO.findOrCreate({
         tvShowId: tvShow!.id,
         seasonId: tvSeason.id,
-        episodeNumber: parseInt(episodeNumber, 10),
-        seasonNumber: parseInt(seasonNumber, 10),
+        episodeNumber: parsedEpisode.episodeNumber,
+        seasonNumber: parsedEpisode.seasonNumber,
       });
+      const isNewEpisode =
+        episode.state !== DownloadableMediaState.PROCESSED &&
+        episode.state !== DownloadableMediaState.DOWNLOADED;
 
       await tvEpisodeDAO.save({
         id: episode.id,
         state: DownloadableMediaState.PROCESSED,
+        monitored: episode.monitored,
         season: tvSeason,
       });
 
-      await fileDAO.save({
-        path: episodePath,
-        tvEpisodeId: episode.id,
-      });
+      if (isNewEpisode) {
+        summary.episodesImported += 1;
+      }
+
+      const file = await fileDAO.findOne({ where: { path: episodePath } });
+
+      if (!file) {
+        await fileDAO.save({
+          path: episodePath,
+          tvEpisodeId: episode.id,
+        });
+        summary.associationsCreated += 1;
+        return;
+      }
+
+      if (!file.tvEpisodeId || file.tvEpisodeId !== episode.id) {
+        await fileDAO.save({
+          id: file.id,
+          tvEpisodeId: episode.id,
+          movieId: null,
+        });
+        summary.associationsRepaired += 1;
+      }
     });
 
-    this.logger.info('finish processing tvshow', { tvshow });
+    this.logger.info('finish processing tvshow', { tvshow, ...summary });
   }
 }
