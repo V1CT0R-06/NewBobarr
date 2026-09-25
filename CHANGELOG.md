@@ -4,6 +4,31 @@
 
 ### Added
 
+- add native library reconciliation for existing TV and movie files
+- add high-confidence TV filename parsing for common `S01E01`, `S1E1`,
+  `s01e01`, and `2x05` episode patterns
+- add `tv_episode.monitored` migration and backend support for monitored vs
+  unmonitored missing episodes
+- add episode-level and season-level Stop searching / Monitor controls in the
+  TV show details UI
+- add Settings action wording for native "Scan / reconcile library"
+- add regression tests for organizer file associations and reconciliation
+  filename parsing
+
+### Fixes
+
+- fix TV episode organizer to save File records with `tvEpisodeId` instead of
+  orphaning them with `episodeId`
+- avoid searching/downloading unmonitored missing episodes from automatic jobs
+- exclude unmonitored episodes from the global Searching list
+- repair missing/stale File associations during library scans without deleting
+  media
+- skip ambiguous TV filenames during reconciliation instead of guessing
+- repair generated TV season episode filenames so organized files do not get a
+  doubled extension separator
+
+### Added
+
 - manual search season pack (https://github.com/iam4x/bobarr/pull/172)
 
 ### Added

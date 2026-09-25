@@ -1,6 +1,21 @@
 # 🍿 Bobarr
 > The all-in-one alternative for Sonarr, Radarr, Jackett... with a VPN and running in docker
 
+## Maintained enhanced fork
+
+This repository is a maintained fork of the original
+[iam4x/bobarr](https://github.com/iam4x/bobarr) project. The original Bobarr
+history, attribution, and MIT license are preserved.
+
+This fork focuses on making Bobarr more reliable for existing libraries:
+
+- native library reconciliation for Movies and TV Shows;
+- safer association of existing TV episode files with Bobarr database records;
+- episode monitoring controls so missing episodes can be left missing without
+  being searched forever;
+- safer automatic download/search behavior that skips unmonitored episodes;
+- UI actions for stopping and resuming searches at episode and season level.
+
 Bobarr is a movies and tv shows collection manager for BitTorrent users. It uses [themoviedb.org](https://www.themoviedb.org/) to search movies and tv shows to add to your library. Then it searches into your favorites torrent trackers the best match and downloads it for you through a VPN.
 
 ![Screenshot](./screenshot.png)
@@ -98,7 +113,49 @@ LIBRARY_MOVIES_FOLDER_NAME=movies
 LIBRARY_TV_SHOWS_FOLDER_NAME=tvshows
 ```
 
-You can now head to http://localhost:3000 and hit that "Scan library folder" button.
+You can now head to http://localhost:3000/settings and hit the
+"Scan / reconcile library" button.
+
+### Library reconciliation
+
+The library scan is also a reconciliation pass. It scans configured Movies and
+TV Shows folders under `/usr/library`, detects existing video files, and repairs
+high-confidence database/file associations without deleting media.
+
+For TV Shows, Bobarr recognizes common episode patterns case-insensitively,
+including:
+
+- `S01E01`
+- `S1E1`
+- `s01e01`
+- `2x05`
+
+When a file can be confidently associated with an existing or TMDB-resolved
+show, Bobarr creates missing season/episode rows as needed, associates the File
+record through `tvEpisodeId`, and marks the episode processed. Ambiguous files
+are skipped and logged instead of guessed.
+
+For Movies, Bobarr reconciles existing files in movie folders with the matching
+movie record and repairs stale or missing File associations.
+
+### Episode monitoring
+
+Monitoring is separate from whether media exists:
+
+- monitored missing episodes may be searched/downloaded automatically;
+- unmonitored missing episodes remain visible as missing/unmonitored, but are
+  excluded from automatic searches, missing-download jobs, and the global
+  Searching list;
+- downloaded/processed episodes may remain monitored.
+
+Open a TV show, expand a season, and use:
+
+- `Stop searching` / `Monitor` on an episode;
+- `Stop searching season` / `Monitor season` on a season.
+
+Stopping search does not delete media. If a torrent is already actively
+downloading, Bobarr stops future automatic searching for that episode but leaves
+the active Transmission torrent alone.
 
 ## How to stop
 
@@ -127,3 +184,27 @@ Check the [CHANGELOG](https://github.com/iam4x/bobarr/blob/master/CHANGELOG.md) 
 Clone the repository and then you can run bobarr API and Web UI in dev watch mode and display logs with:
 
 * `$ yarn dev`
+
+### Local checks
+
+API regression tests:
+
+```bash
+cd packages/api
+yarn test
+```
+
+API production build:
+
+```bash
+cd packages/api
+yarn build
+```
+
+Web production build on modern Node versions may need the legacy OpenSSL
+provider because this project still uses an older Next/Webpack stack:
+
+```bash
+cd packages/web
+NODE_OPTIONS=--openssl-legacy-provider yarn build
+```
