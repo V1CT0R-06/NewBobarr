@@ -25,6 +25,7 @@ export class TVEpisodeDAO extends Repository<TVEpisode> {
       .where('episode.state = :episodeState', {
         episodeState: DownloadableMediaState.MISSING,
       })
+      .andWhere('episode.monitored = true')
       .orderBy('episode.tvShow', 'DESC')
       .addOrderBy('episode.season', 'DESC')
       .addOrderBy('episode.episodeNumber', 'DESC')

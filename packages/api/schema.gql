@@ -166,6 +166,9 @@ type EnrichedTVEpisode {
   episodeNumber: Float!
   seasonNumber: Float!
   state: DownloadableMediaState!
+  monitored: Boolean!
+  seasonId: Float!
+  tvShowId: Float!
   tvShow: TVShow!
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -295,6 +298,9 @@ type Mutation {
   downloadMovie(jackettResult: JackettInput!, movieId: Int!): GraphQLCommonResponse!
   downloadSeason(jackettResult: JackettInput!, seasonNumber: Int!, tvShowTMDBId: Int!): GraphQLCommonResponse!
   downloadTVEpisode(jackettResult: JackettInput!, episodeId: Int!): GraphQLCommonResponse!
+  setTVEpisodeMonitored(monitored: Boolean!, episodeId: Int!): GraphQLCommonResponse!
+  setTVSeasonMonitored(monitored: Boolean!, seasonId: Int!): GraphQLCommonResponse!
+  setTVShowMissingEpisodesMonitored(monitored: Boolean!, tvShowId: Int!): GraphQLCommonResponse!
   trackMovie(tmdbId: Int!, title: String!): Movie!
   removeMovie(tmdbId: Int!): GraphQLCommonResponse!
   trackTVShow(seasonNumbers: [Int!]!, tmdbId: Int!): TVShow!

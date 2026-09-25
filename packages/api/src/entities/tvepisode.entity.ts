@@ -40,6 +40,12 @@ export class TVEpisode {
   @Column('varchar', { default: DownloadableMediaState.SEARCHING })
   public state: DownloadableMediaState = DownloadableMediaState.SEARCHING;
 
+  @Field()
+  @Index()
+  @Column('boolean', { default: true })
+  public monitored: boolean = true;
+
+  @Field()
   @Column('int')
   public seasonId!: number;
 
@@ -49,6 +55,7 @@ export class TVEpisode {
   })
   public season!: TVSeason;
 
+  @Field()
   @Column('int')
   public tvShowId!: number;
 

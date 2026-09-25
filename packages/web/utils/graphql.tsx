@@ -196,6 +196,9 @@ export type EnrichedTvEpisode = {
   episodeNumber: Scalars['Float'];
   seasonNumber: Scalars['Float'];
   state: DownloadableMediaState;
+  monitored: Scalars['Boolean'];
+  seasonId: Scalars['Float'];
+  tvShowId: Scalars['Float'];
   tvShow: TvShow;
   createdAt: Scalars['DateTime'];
   updatedAt: Scalars['DateTime'];
@@ -382,6 +385,9 @@ export type Mutation = {
   downloadMovie: GraphQlCommonResponse;
   downloadSeason: GraphQlCommonResponse;
   downloadTVEpisode: GraphQlCommonResponse;
+  setTVEpisodeMonitored: GraphQlCommonResponse;
+  setTVSeasonMonitored: GraphQlCommonResponse;
+  setTVShowMissingEpisodesMonitored: GraphQlCommonResponse;
   trackMovie: Movie;
   removeMovie: GraphQlCommonResponse;
   trackTVShow: TvShow;
@@ -422,6 +428,24 @@ export type MutationDownloadSeasonArgs = {
 export type MutationDownloadTvEpisodeArgs = {
   jackettResult: JackettInput;
   episodeId: Scalars['Int'];
+};
+
+
+export type MutationSetTvEpisodeMonitoredArgs = {
+  monitored: Scalars['Boolean'];
+  episodeId: Scalars['Int'];
+};
+
+
+export type MutationSetTvSeasonMonitoredArgs = {
+  monitored: Scalars['Boolean'];
+  seasonId: Scalars['Int'];
+};
+
+
+export type MutationSetTvShowMissingEpisodesMonitoredArgs = {
+  monitored: Scalars['Boolean'];
+  tvShowId: Scalars['Int'];
 };
 
 
@@ -576,6 +600,48 @@ export type DownloadSeasonMutationVariables = Exact<{
 
 
 export type DownloadSeasonMutation = (
+  { __typename?: 'Mutation' }
+  & { result: (
+    { __typename?: 'GraphQLCommonResponse' }
+    & Pick<GraphQlCommonResponse, 'success' | 'message'>
+  ) }
+);
+
+export type SetTvEpisodeMonitoredMutationVariables = Exact<{
+  episodeId: Scalars['Int'];
+  monitored: Scalars['Boolean'];
+}>;
+
+
+export type SetTvEpisodeMonitoredMutation = (
+  { __typename?: 'Mutation' }
+  & { result: (
+    { __typename?: 'GraphQLCommonResponse' }
+    & Pick<GraphQlCommonResponse, 'success' | 'message'>
+  ) }
+);
+
+export type SetTvSeasonMonitoredMutationVariables = Exact<{
+  seasonId: Scalars['Int'];
+  monitored: Scalars['Boolean'];
+}>;
+
+
+export type SetTvSeasonMonitoredMutation = (
+  { __typename?: 'Mutation' }
+  & { result: (
+    { __typename?: 'GraphQLCommonResponse' }
+    & Pick<GraphQlCommonResponse, 'success' | 'message'>
+  ) }
+);
+
+export type SetTvShowMissingEpisodesMonitoredMutationVariables = Exact<{
+  tvShowId: Scalars['Int'];
+  monitored: Scalars['Boolean'];
+}>;
+
+
+export type SetTvShowMissingEpisodesMonitoredMutation = (
   { __typename?: 'Mutation' }
   & { result: (
     { __typename?: 'GraphQLCommonResponse' }
@@ -927,7 +993,7 @@ export type GetTvSeasonDetailsQuery = (
   { __typename?: 'Query' }
   & { episodes: Array<(
     { __typename?: 'EnrichedTVEpisode' }
-    & Pick<EnrichedTvEpisode, 'id' | 'episodeNumber' | 'seasonNumber' | 'state' | 'updatedAt' | 'voteAverage' | 'releaseDate' | 'createdAt'>
+    & Pick<EnrichedTvEpisode, 'id' | 'seasonId' | 'tvShowId' | 'episodeNumber' | 'seasonNumber' | 'state' | 'monitored' | 'updatedAt' | 'voteAverage' | 'releaseDate' | 'createdAt'>
     & { tvShow: (
       { __typename?: 'TVShow' }
       & Pick<TvShow, 'id' | 'title' | 'tmdbId' | 'updatedAt' | 'createdAt'>
@@ -1131,6 +1197,51 @@ export function useDownloadSeasonMutation(baseOptions?: Apollo.MutationHookOptio
 export type DownloadSeasonMutationHookResult = ReturnType<typeof useDownloadSeasonMutation>;
 export type DownloadSeasonMutationResult = Apollo.MutationResult<DownloadSeasonMutation>;
 export type DownloadSeasonMutationOptions = Apollo.BaseMutationOptions<DownloadSeasonMutation, DownloadSeasonMutationVariables>;
+export const SetTvEpisodeMonitoredDocument = gql`
+    mutation setTVEpisodeMonitored($episodeId: Int!, $monitored: Boolean!) {
+  result: setTVEpisodeMonitored(episodeId: $episodeId, monitored: $monitored) {
+    success
+    message
+  }
+}
+    `;
+export function useSetTvEpisodeMonitoredMutation(baseOptions?: Apollo.MutationHookOptions<SetTvEpisodeMonitoredMutation, SetTvEpisodeMonitoredMutationVariables>) {
+        return Apollo.useMutation<SetTvEpisodeMonitoredMutation, SetTvEpisodeMonitoredMutationVariables>(SetTvEpisodeMonitoredDocument, baseOptions);
+      }
+export type SetTvEpisodeMonitoredMutationHookResult = ReturnType<typeof useSetTvEpisodeMonitoredMutation>;
+export type SetTvEpisodeMonitoredMutationResult = Apollo.MutationResult<SetTvEpisodeMonitoredMutation>;
+export type SetTvEpisodeMonitoredMutationOptions = Apollo.BaseMutationOptions<SetTvEpisodeMonitoredMutation, SetTvEpisodeMonitoredMutationVariables>;
+export const SetTvSeasonMonitoredDocument = gql`
+    mutation setTVSeasonMonitored($seasonId: Int!, $monitored: Boolean!) {
+  result: setTVSeasonMonitored(seasonId: $seasonId, monitored: $monitored) {
+    success
+    message
+  }
+}
+    `;
+export function useSetTvSeasonMonitoredMutation(baseOptions?: Apollo.MutationHookOptions<SetTvSeasonMonitoredMutation, SetTvSeasonMonitoredMutationVariables>) {
+        return Apollo.useMutation<SetTvSeasonMonitoredMutation, SetTvSeasonMonitoredMutationVariables>(SetTvSeasonMonitoredDocument, baseOptions);
+      }
+export type SetTvSeasonMonitoredMutationHookResult = ReturnType<typeof useSetTvSeasonMonitoredMutation>;
+export type SetTvSeasonMonitoredMutationResult = Apollo.MutationResult<SetTvSeasonMonitoredMutation>;
+export type SetTvSeasonMonitoredMutationOptions = Apollo.BaseMutationOptions<SetTvSeasonMonitoredMutation, SetTvSeasonMonitoredMutationVariables>;
+export const SetTvShowMissingEpisodesMonitoredDocument = gql`
+    mutation setTVShowMissingEpisodesMonitored($tvShowId: Int!, $monitored: Boolean!) {
+  result: setTVShowMissingEpisodesMonitored(
+    tvShowId: $tvShowId
+    monitored: $monitored
+  ) {
+    success
+    message
+  }
+}
+    `;
+export function useSetTvShowMissingEpisodesMonitoredMutation(baseOptions?: Apollo.MutationHookOptions<SetTvShowMissingEpisodesMonitoredMutation, SetTvShowMissingEpisodesMonitoredMutationVariables>) {
+        return Apollo.useMutation<SetTvShowMissingEpisodesMonitoredMutation, SetTvShowMissingEpisodesMonitoredMutationVariables>(SetTvShowMissingEpisodesMonitoredDocument, baseOptions);
+      }
+export type SetTvShowMissingEpisodesMonitoredMutationHookResult = ReturnType<typeof useSetTvShowMissingEpisodesMonitoredMutation>;
+export type SetTvShowMissingEpisodesMonitoredMutationResult = Apollo.MutationResult<SetTvShowMissingEpisodesMonitoredMutation>;
+export type SetTvShowMissingEpisodesMonitoredMutationOptions = Apollo.BaseMutationOptions<SetTvShowMissingEpisodesMonitoredMutation, SetTvShowMissingEpisodesMonitoredMutationVariables>;
 export const RemoveMovieDocument = gql`
     mutation removeMovie($tmdbId: Int!) {
   result: removeMovie(tmdbId: $tmdbId) {
@@ -1632,9 +1743,12 @@ export const GetTvSeasonDetailsDocument = gql`
     seasonNumber: $seasonNumber
   ) {
     id
+    seasonId
+    tvShowId
     episodeNumber
     seasonNumber
     state
+    monitored
     updatedAt
     voteAverage
     releaseDate

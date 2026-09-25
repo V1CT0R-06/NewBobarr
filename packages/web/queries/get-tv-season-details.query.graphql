@@ -4,9 +4,12 @@ query getTVSeasonDetails($tvShowTMDBId: Int!, $seasonNumber: Int!) {
     seasonNumber: $seasonNumber
   ) {
     id
+    seasonId
+    tvShowId
     episodeNumber
     seasonNumber
     state
+    monitored
     updatedAt
     voteAverage
     releaseDate

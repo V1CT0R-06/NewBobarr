@@ -7,7 +7,13 @@ import childCommand from 'child-command';
 import dayjs from 'dayjs';
 import path from 'path';
 
-import { DeepPartial, TransactionManager, EntityManager, Any } from 'typeorm';
+import {
+  DeepPartial,
+  TransactionManager,
+  EntityManager,
+  Any,
+  In,
+} from 'typeorm';
 
 import { FileType, DownloadableMediaState } from 'src/app.dto';
 import { LazyTransaction } from 'src/utils/lazy-transaction';
@@ -82,7 +88,7 @@ export class LibraryService {
 
   public async getSearching() {
     const searching = await this.mediaViewDAO.find({
-      where: { state: DownloadableMediaState.SEARCHING },
+      where: { state: DownloadableMediaState.SEARCHING, monitored: true },
     });
 
     const downloadingSeasons = await this.mediaViewDAO.find({
@@ -136,6 +142,85 @@ export class LibraryService {
   public async findMissingTVEpisodes() {
     const rows = await this.tvEpisodeDAO.findMissingFromLibrary();
     return rows.map(this.enrichTVEpisode);
+  }
+
+  @LazyTransaction()
+  public async setTVEpisodeMonitored(
+    episodeId: number,
+    monitored: boolean,
+    @TransactionManager() manager: EntityManager | null
+  ) {
+    const tvEpisodeDAO = manager!.getCustomRepository(TVEpisodeDAO);
+    const episode = await tvEpisodeDAO.findOneOrFail(episodeId);
+    const nextState =
+      !monitored && episode.state === DownloadableMediaState.SEARCHING
+        ? DownloadableMediaState.MISSING
+        : episode.state;
+
+    await tvEpisodeDAO.save({
+      id: episodeId,
+      monitored,
+      state: nextState,
+    });
+
+    if (!monitored) {
+      await this.jobsService.removeDownloadEpisodeJobs(episodeId);
+      await this.removeInactiveTorrentRecord({
+        resourceId: episodeId,
+        resourceType: FileType.EPISODE,
+        manager: manager!,
+      });
+    }
+
+    return tvEpisodeDAO.findOneOrFail(episodeId);
+  }
+
+  @LazyTransaction()
+  public async setTVSeasonMonitored(
+    seasonId: number,
+    monitored: boolean,
+    @TransactionManager() manager: EntityManager | null
+  ) {
+    const tvEpisodeDAO = manager!.getCustomRepository(TVEpisodeDAO);
+    const episodes = await tvEpisodeDAO.find({
+      where: {
+        seasonId,
+        state: In([
+          DownloadableMediaState.SEARCHING,
+          DownloadableMediaState.MISSING,
+        ]),
+      },
+    });
+
+    await forEachSeries(episodes, async (episode) => {
+      await this.setTVEpisodeMonitored(episode.id, monitored, manager);
+    });
+
+    return tvEpisodeDAO.find({ where: { seasonId } });
+  }
+
+  @LazyTransaction()
+  public async setTVShowMissingEpisodesMonitored(
+    tvShowId: number,
+    monitored: boolean,
+    @TransactionManager() manager: EntityManager | null
+  ) {
+    const tvEpisodeDAO = manager!.getCustomRepository(TVEpisodeDAO);
+    const episodes = await tvEpisodeDAO.find({
+      where: {
+        tvShowId,
+        state: In([
+          DownloadableMediaState.SEARCHING,
+          DownloadableMediaState.MISSING,
+        ]),
+      },
+    });
+
+    await forEachSeries(episodes, async (episode) => {
+      await this.setTVEpisodeMonitored(episode.id, monitored, manager);
+    });
+
+    return tvEpisodeDAO.find({ where: { tvShowId } });
   }
 
   public async findMissingMovies() {
@@ -348,6 +433,13 @@ export class LibraryService {
     this.logger.info('start download tv season', { seasonId });
     this.logger.info(jackettResult.title);
 
+    await manager!.getCustomRepository(TVEpisodeDAO).update(
+      { seasonId },
+      {
+        monitored: true,
+      }
+    );
+
     await this.replaceSeason(seasonId, manager!);
 
     const torrent = await this.transmissionService.addTorrent(
@@ -378,6 +470,11 @@ export class LibraryService {
   ) {
     this.logger.info('start download tv episode', { episodeId });
     this.logger.info(jackettResult.title);
+
+    await manager!.getCustomRepository(TVEpisodeDAO).save({
+      id: episodeId,
+      monitored: true,
+    });
 
     await this.replaceTVEpisode(episodeId, manager!);
 
@@ -650,6 +747,7 @@ export class LibraryService {
     await tvEpisodeDAO.save(
       tvSeason.episodes.map((v) => ({
         id: v.id,
+        monitored: true,
         state: DownloadableMediaState.SEARCHING,
       }))
     );
@@ -682,7 +780,38 @@ export class LibraryService {
 
     await tvEpisodeDAO.save({
       id: episodeId,
+      monitored: true,
       state: DownloadableMediaState.DOWNLOADING,
+    });
+  }
+
+  private async removeInactiveTorrentRecord({
+    resourceId,
+    resourceType,
+    manager,
+  }: {
+    resourceId: number;
+    resourceType: FileType;
+    manager: EntityManager;
+  }) {
+    const torrentDAO = manager.getCustomRepository(TorrentDAO);
+    const torrents = await torrentDAO.find({
+      where: { resourceId, resourceType },
+    });
+
+    await forEachSeries(torrents, async (torrent) => {
+      const transmissionTorrent = await this.transmissionService
+        .getTorrent(torrent.torrentHash)
+        .catch(() => null);
+
+      if (!transmissionTorrent) {
+        await torrentDAO.remove(torrent);
+        this.logger.info('removed inactive torrent database row', {
+          torrentId: torrent.id,
+          resourceId,
+          resourceType,
+        });
+      }
     });
   }
 

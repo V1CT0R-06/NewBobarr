@@ -8,7 +8,8 @@ import { FileType, DownloadableMediaState } from 'src/app.dto';
       id as "resourceId",
       title,
       'movie' as "resourceType",
-      state
+      state,
+      true as monitored
     FROM
       movie
     UNION ALL
@@ -17,7 +18,8 @@ import { FileType, DownloadableMediaState } from 'src/app.dto';
       tv_season.id as "resourceId",
       tv_show.title || ' - Season ' || "seasonNumber"::text as title,
       'season' as "resourceType",
-      tv_season.state
+      tv_season.state,
+      true as monitored
     FROM
       tv_season
       LEFT JOIN tv_show ON tv_season."tvShowId" = tv_show.id
@@ -27,7 +29,8 @@ import { FileType, DownloadableMediaState } from 'src/app.dto';
       tv_episode.id as "resourceId",
       tv_show.title || ' - Season ' || "seasonNumber"::text || ' - Episode ' || "episodeNumber"::text as title,
       'episode' as "resourceType",
-      tv_episode.state
+      tv_episode.state,
+      tv_episode.monitored as monitored
     FROM
       tv_episode
       LEFT JOIN tv_show ON tv_episode."tvShowId" = tv_show.id
@@ -39,4 +42,5 @@ export class MediaView {
   @ViewColumn() public resourceId!: number;
   @ViewColumn() public resourceType!: FileType;
   @ViewColumn() public state!: DownloadableMediaState;
+  @ViewColumn() public monitored!: boolean;
 }
