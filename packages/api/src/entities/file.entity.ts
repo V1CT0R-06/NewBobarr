@@ -1,4 +1,4 @@
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, Int, ObjectType } from '@nestjs/graphql';
 
 import {
   Column,
@@ -23,11 +23,11 @@ export class File {
   @Column('varchar', { unique: true })
   public path!: string;
 
-  @Field()
+  @Field((_type) => Int, { nullable: true })
   @Column('int', { nullable: true })
   public tvEpisodeId!: number | null;
 
-  @Field()
+  @Field((_type) => Int, { nullable: true })
   @Column('int', { nullable: true })
   public movieId!: number | null;
 
