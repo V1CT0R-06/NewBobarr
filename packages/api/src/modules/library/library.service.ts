@@ -150,6 +150,10 @@ export class LibraryService {
   ) {
     const tvEpisodeDAO = manager!.getCustomRepository(TVEpisodeDAO);
     const episode = await tvEpisodeDAO.findOneOrFail(episodeId);
+
+    // Monitoring is user intent, not media state. When a user stops searching,
+    // keep downloaded/downloading media intact and only clear "searching" state
+    // that no longer represents an active desired search.
     const nextState =
       !monitored && episode.state === DownloadableMediaState.SEARCHING
         ? DownloadableMediaState.MISSING
@@ -163,7 +167,7 @@ export class LibraryService {
 
     if (!monitored) {
       await this.jobsService.removeDownloadEpisodeJobs(episodeId);
-      await this.removeInactiveTorrentRecord({
+      await this.removeInactiveTorrentRecordOnly({
         resourceId: episodeId,
         resourceType: FileType.EPISODE,
         manager: manager!,
@@ -783,7 +787,7 @@ export class LibraryService {
     });
   }
 
-  private async removeInactiveTorrentRecord({
+  private async removeInactiveTorrentRecordOnly({
     resourceId,
     resourceType,
     manager,
@@ -798,6 +802,8 @@ export class LibraryService {
     });
 
     await forEachSeries(torrents, async (torrent) => {
+      // Do not remove a Transmission torrent that still exists. This protects
+      // active downloads when a user only wants to stop future automatic search.
       const transmissionTorrent = await this.transmissionService
         .getTorrent(torrent.torrentHash)
         .catch(() => null);
