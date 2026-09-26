@@ -23,6 +23,20 @@ export function stateAfterMissingTransmissionTorrent() {
   return DownloadableMediaState.MISSING;
 }
 
+export function shouldRemoveInactiveMissingTorrentRow({
+  resourceState,
+  transmissionTorrentExists,
+}: {
+  resourceState?: DownloadableMediaState;
+  transmissionTorrentExists: boolean;
+}) {
+  return (
+    !transmissionTorrentExists &&
+    resourceState !== undefined &&
+    resourceState !== DownloadableMediaState.DOWNLOADING
+  );
+}
+
 @Processor(JobsQueue.REFRESH_TORRENT)
 export class RefreshTorrentProcessor {
   // eslint-disable-next-line max-params
@@ -72,6 +86,8 @@ export class RefreshTorrentProcessor {
         resourceType: FileType.EPISODE,
       })
     );
+
+    await this.removeInactiveMissingTorrentRows();
 
     this.logger.info('finish refresh torrent status');
   }
@@ -173,5 +189,61 @@ export class RefreshTorrentProcessor {
     if (resourceType === FileType.EPISODE) {
       await this.tvEpisodeDAO.save({ id: resourceId, state });
     }
+  }
+
+  private async removeInactiveMissingTorrentRows() {
+    const incompleteTorrentRows = await this.torrentDAO.find({
+      where: { completed: false },
+    });
+
+    await forEachSeries(incompleteTorrentRows, async (torrent) => {
+      const transmissionTorrent = await this.transmissionService.getTorrent(
+        torrent.torrentHash
+      );
+      const resourceState = await this.getResourceState({
+        resourceId: torrent.resourceId,
+        resourceType: torrent.resourceType,
+      });
+
+      if (
+        shouldRemoveInactiveMissingTorrentRow({
+          resourceState,
+          transmissionTorrentExists: Boolean(transmissionTorrent),
+        })
+      ) {
+        this.logger.warn(
+          'removing inactive stale torrent row missing from Transmission',
+          {
+            resourceId: torrent.resourceId,
+            resourceType: torrent.resourceType,
+            resourceState,
+            torrentHash: torrent.torrentHash,
+          }
+        );
+        await this.torrentDAO.remove(torrent);
+      }
+    });
+  }
+
+  private async getResourceState({
+    resourceId,
+    resourceType,
+  }: {
+    resourceId: number;
+    resourceType: FileType;
+  }) {
+    if (resourceType === FileType.MOVIE) {
+      return (await this.movieDAO.findOne(resourceId))?.state;
+    }
+
+    if (resourceType === FileType.SEASON) {
+      return (await this.tvSeasonDAO.findOne(resourceId))?.state;
+    }
+
+    if (resourceType === FileType.EPISODE) {
+      return (await this.tvEpisodeDAO.findOne(resourceId))?.state;
+    }
+
+    return undefined;
   }
 }

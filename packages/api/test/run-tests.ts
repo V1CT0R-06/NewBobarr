@@ -2,7 +2,10 @@ import assert from 'assert';
 
 import { buildTVEpisodeFileRecord } from '../src/modules/jobs/processors/organize.processor';
 import { shouldContinueAutomaticMovieDownload } from '../src/modules/jobs/processors/download.processor';
-import { stateAfterMissingTransmissionTorrent } from '../src/modules/jobs/processors/refresh-torrent.processor';
+import {
+  shouldRemoveInactiveMissingTorrentRow,
+  stateAfterMissingTransmissionTorrent,
+} from '../src/modules/jobs/processors/refresh-torrent.processor';
 import { DownloadableMediaState } from '../src/app.dto';
 import {
   normalizeMediaTitle,
@@ -62,6 +65,34 @@ function testMissingTransmissionTorrentReturnsToMissingState() {
 }
 
 testMissingTransmissionTorrentReturnsToMissingState();
+
+function testInactiveMissingTorrentRowsAreSafeToRemove() {
+  assert.strictEqual(
+    shouldRemoveInactiveMissingTorrentRow({
+      resourceState: DownloadableMediaState.DOWNLOADED,
+      transmissionTorrentExists: false,
+    }),
+    true
+  );
+  assert.strictEqual(
+    shouldRemoveInactiveMissingTorrentRow({
+      resourceState: DownloadableMediaState.DOWNLOADING,
+      transmissionTorrentExists: false,
+    }),
+    false,
+    'active downloading resources need state repair instead of silent cleanup'
+  );
+  assert.strictEqual(
+    shouldRemoveInactiveMissingTorrentRow({
+      resourceState: DownloadableMediaState.DOWNLOADED,
+      transmissionTorrentExists: true,
+    }),
+    false,
+    'Bobarr must not remove rows for torrents that still exist in Transmission'
+  );
+}
+
+testInactiveMissingTorrentRowsAreSafeToRemove();
 
 function testEpisodeFilenameParsing() {
   assert.deepStrictEqual(
