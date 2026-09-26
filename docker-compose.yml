@@ -15,7 +15,9 @@ services:
   api:
     container_name: bobarr-api
     env_file: .env
-    image: iam4x/bobarr-api:latest
+    build:
+      context: ./packages/api
+    image: bobarr-api:local
     command: yarn start:prod
     restart: unless-stopped
     volumes:
@@ -26,7 +28,9 @@ services:
   web:
     container_name: bobarr-web
     env_file: .env
-    image: iam4x/bobarr-web:latest
+    build:
+      context: ./packages/web
+    image: bobarr-web:local
     command: yarn start
     restart: unless-stopped
     ports:

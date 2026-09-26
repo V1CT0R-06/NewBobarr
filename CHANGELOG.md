@@ -2,6 +2,15 @@
 
 ## master (pre-release)
 
+### Changed
+
+- prepare repository for standalone public fork use
+- make the default Compose deployment build local API/Web images from source
+- replace tracked runtime `.env` with `.env.example`
+- replace tracked Transmission runtime settings with a safe example file
+- replace DockerHub publish workflows with CI-only checks and Docker builds
+- document clone/deploy, local builds, CI, reconciliation, and monitoring
+
 ### Added
 
 - add native library reconciliation for existing TV and movie files
@@ -17,6 +26,7 @@
 
 ### Fixes
 
+- remove hardcoded debug TV-season lookup from `LibraryService`
 - fix TV episode organizer to save File records with `tvEpisodeId` instead of
   orphaning them with `episodeId`
 - avoid searching/downloading unmonitored missing episodes from automatic jobs

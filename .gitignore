@@ -1,4 +1,6 @@
 node_modules
+.env
+!.env.example
 
 # misc
 .DS_Store
@@ -19,7 +21,7 @@ packages/jackett/downloads/*
 packages/transmission/config/*
 packages/transmission/watch/*
 !packages/transmission/**/.gitkeep
-!packages/transmission/config/settings.json
+!packages/transmission/config/settings.example.json
 
 # vpn
 packages/vpn/*
