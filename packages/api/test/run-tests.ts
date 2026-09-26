@@ -2,6 +2,7 @@ import assert from 'assert';
 
 import { buildTVEpisodeFileRecord } from '../src/modules/jobs/processors/organize.processor';
 import { shouldContinueAutomaticMovieDownload } from '../src/modules/jobs/processors/download.processor';
+import { stateAfterMissingTransmissionTorrent } from '../src/modules/jobs/processors/refresh-torrent.processor';
 import { DownloadableMediaState } from '../src/app.dto';
 import {
   normalizeMediaTitle,
@@ -51,6 +52,16 @@ function testAutomaticMovieDownloadOnlyContinuesForSearchingMovies() {
 }
 
 testAutomaticMovieDownloadOnlyContinuesForSearchingMovies();
+
+function testMissingTransmissionTorrentReturnsToMissingState() {
+  assert.strictEqual(
+    stateAfterMissingTransmissionTorrent(),
+    DownloadableMediaState.MISSING,
+    'stale Bobarr torrent rows must not leave resources stuck downloading'
+  );
+}
+
+testMissingTransmissionTorrentReturnsToMissingState();
 
 function testEpisodeFilenameParsing() {
   assert.deepStrictEqual(

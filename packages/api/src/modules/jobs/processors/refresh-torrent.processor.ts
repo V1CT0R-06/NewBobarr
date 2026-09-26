@@ -19,6 +19,10 @@ import { TVEpisodeDAO } from 'src/entities/dao/tvepisode.dao';
 
 import { TransmissionService } from 'src/modules/transmission/transmission.service';
 
+export function stateAfterMissingTransmissionTorrent() {
+  return DownloadableMediaState.MISSING;
+}
+
 @Processor(JobsQueue.REFRESH_TORRENT)
 export class RefreshTorrentProcessor {
   // eslint-disable-next-line max-params
@@ -81,13 +85,30 @@ export class RefreshTorrentProcessor {
   }) {
     this.logger.info('refresh torrent status', { resourceId, resourceType });
 
-    const torrent = await this.torrentDAO.findOneOrFail({
+    const torrent = await this.torrentDAO.findOne({
       where: { resourceId, resourceType },
     });
+
+    if (!torrent) {
+      await this.markResourceAsMissing({ resourceId, resourceType });
+      return;
+    }
 
     const transmissionTorrent = await this.transmissionService.getTorrent(
       torrent.torrentHash
     );
+
+    if (!transmissionTorrent) {
+      this.logger.warn('torrent row is stale; missing from Transmission', {
+        resourceId,
+        resourceType,
+        torrentHash: torrent.torrentHash,
+      });
+
+      await this.torrentDAO.remove(torrent);
+      await this.markResourceAsMissing({ resourceId, resourceType });
+      return;
+    }
 
     const isComplete = transmissionTorrent?.percentDone === 1;
 
@@ -129,6 +150,28 @@ export class RefreshTorrentProcessor {
           { episodeId: resourceId }
         );
       }
+    }
+  }
+
+  private async markResourceAsMissing({
+    resourceId,
+    resourceType,
+  }: {
+    resourceId: number;
+    resourceType: FileType;
+  }) {
+    const state = stateAfterMissingTransmissionTorrent();
+
+    if (resourceType === FileType.MOVIE) {
+      await this.movieDAO.save({ id: resourceId, state });
+    }
+
+    if (resourceType === FileType.SEASON) {
+      await this.tvSeasonDAO.save({ id: resourceId, state });
+    }
+
+    if (resourceType === FileType.EPISODE) {
+      await this.tvEpisodeDAO.save({ id: resourceId, state });
     }
   }
 }
