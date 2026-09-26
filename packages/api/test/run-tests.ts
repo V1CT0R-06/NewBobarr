@@ -8,6 +8,9 @@ import {
 } from '../src/modules/jobs/processors/refresh-torrent.processor';
 import { DownloadableMediaState } from '../src/app.dto';
 import {
+  isPathInsideHiddenLibraryFolder,
+  isPathInsideLibraryRoot,
+  isVisibleLibraryFolderName,
   normalizeMediaTitle,
   parseEpisodeFile,
 } from '../src/modules/library/reconciliation.helpers';
@@ -129,7 +132,44 @@ function testTitleNormalization() {
   );
 }
 
+function testLibraryPathVisibilityRules() {
+  assert.strictEqual(isVisibleLibraryFolderName('The Simpsons'), true);
+  assert.strictEqual(isVisibleLibraryFolderName('.The Simpsons'), false);
+
+  assert.strictEqual(
+    isPathInsideLibraryRoot(
+      '/usr/library/Shows/The Simpsons/Season 02/S02E01.mkv',
+      '/usr/library/Shows'
+    ),
+    true
+  );
+  assert.strictEqual(
+    isPathInsideLibraryRoot(
+      '/usr/library/Music/song.mp3',
+      '/usr/library/Shows'
+    ),
+    false
+  );
+
+  assert.strictEqual(
+    isPathInsideHiddenLibraryFolder(
+      '/usr/library/Shows/.The Simpsons/The.Simpsons.S02/S02E01.mkv',
+      '/usr/library/Shows'
+    ),
+    true,
+    'hidden library folders must not count as downloaded media'
+  );
+  assert.strictEqual(
+    isPathInsideHiddenLibraryFolder(
+      '/usr/library/Shows/The Simpsons/Season 02/S02E01.mkv',
+      '/usr/library/Shows'
+    ),
+    false
+  );
+}
+
 testEpisodeFilenameParsing();
 testTitleNormalization();
+testLibraryPathVisibilityRules();
 
 console.log('API tests passed');

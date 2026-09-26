@@ -33,6 +33,9 @@ import { JobsService } from 'src/modules/jobs/jobs.service';
 import { TMDBService } from 'src/modules/tmdb/tmdb.service';
 import {
   isAllowedVideoFile,
+  isPathInsideHiddenLibraryFolder,
+  isPathInsideLibraryRoot,
+  isVisibleLibraryFolderName,
   normalizeMediaTitle,
   parseEpisodeFile,
 } from 'src/modules/library/reconciliation.helpers';
@@ -84,13 +87,17 @@ function addTVShowScanSummary(
 
 @Processor(JobsQueue.SCAN_LIBRARY)
 export class ScanLibraryProcessor {
+  // eslint-disable-next-line max-params
   public constructor(
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
     @InjectQueue(JobsQueue.SCAN_LIBRARY)
     private readonly scanLibraryQueue: Queue,
     private readonly jobsService: JobsService,
     private readonly tmdbService: TMDBService,
-    private readonly tvEpisodeDAO: TVEpisodeDAO
+    private readonly tvEpisodeDAO: TVEpisodeDAO,
+    private readonly tvSeasonDAO: TVSeasonDAO,
+    private readonly fileDAO: FileDAO,
+    private readonly movieDAO: MovieDAO
   ) {
     this.logger = logger.child({ context: 'ScanLibrary' });
   }
@@ -169,10 +176,12 @@ export class ScanLibraryProcessor {
     });
 
     const root = `/usr/library/${LIBRARY_CONFIG.moviesFolderName}`;
+    await this.removeInvalidLibraryFileRows(root);
+
     const movies = await fs
       .readdir(root)
       .then((entries) =>
-        filterSeries(entries, (entry) =>
+        filterSeries(entries.filter(isVisibleLibraryFolderName), (entry) =>
           fs.stat(path.join(root, entry)).then((result) => result.isDirectory())
         )
       );
@@ -196,8 +205,13 @@ export class ScanLibraryProcessor {
     });
 
     const root = `/usr/library/${LIBRARY_CONFIG.tvShowsFolderName}`;
+    await this.removeInvalidLibraryFileRows(root);
+
     const tvshows = (await fs.readdir(root, { withFileTypes: true }))
-      .filter((dirent) => dirent.isDirectory())
+      .filter(
+        (dirent) =>
+          dirent.isDirectory() && isVisibleLibraryFolderName(dirent.name)
+      )
       .map((dirent) => dirent.name);
 
     this.logger.info(`found ${tvshows.length} tvshows on disk`);
@@ -460,7 +474,11 @@ export class ScanLibraryProcessor {
 
     return mapSeries(
       seasonFolders
-        .filter((seasonFolder) => seasonFolder.isDirectory())
+        .filter(
+          (seasonFolder) =>
+            seasonFolder.isDirectory() &&
+            isVisibleLibraryFolderName(seasonFolder.name)
+        )
         .map((seasonFolder) => seasonFolder.name),
       async (seasonFolderName) => {
         const seasonPath = path.join(tvShowPath, seasonFolderName);
@@ -598,5 +616,144 @@ export class ScanLibraryProcessor {
       movieId: null,
     });
     return 'repaired';
+  }
+
+  private async removeInvalidLibraryFileRows(libraryRoot: string) {
+    const rootEntries = await fs.readdir(libraryRoot);
+
+    if (rootEntries.length === 0) {
+      this.logger.warn(
+        'skip stale file cleanup because library root is empty',
+        {
+          libraryRoot,
+        }
+      );
+      return;
+    }
+
+    const fileRows = await this.fileDAO
+      .createQueryBuilder('file')
+      .leftJoinAndSelect('file.tvEpisode', 'tvEpisode')
+      .leftJoinAndSelect('tvEpisode.season', 'season')
+      .leftJoinAndSelect('file.movie', 'movie')
+      .where('file.path LIKE :libraryRoot', {
+        libraryRoot: `${libraryRoot}/%`,
+      })
+      .getMany();
+
+    await forEachSeries(fileRows, async (fileRow) => {
+      if (!isPathInsideLibraryRoot(fileRow.path, libraryRoot)) {
+        return;
+      }
+
+      const hiddenPath = isPathInsideHiddenLibraryFolder(
+        fileRow.path,
+        libraryRoot
+      );
+      const fileExists = hiddenPath
+        ? false
+        : await this.fileExists(fileRow.path);
+
+      if (!hiddenPath && fileExists) {
+        return;
+      }
+
+      await this.removeInvalidFileRow({
+        fileId: fileRow.id,
+        movieId: fileRow.movieId,
+        tvEpisodeId: fileRow.tvEpisodeId,
+        seasonId: fileRow.tvEpisode?.seasonId,
+        reason: hiddenPath ? 'hidden-library-folder' : 'missing-library-file',
+      });
+    });
+  }
+
+  private fileExists(filePath: string) {
+    return fs
+      .access(filePath)
+      .then(() => true)
+      .catch(() => false);
+  }
+
+  private async removeInvalidFileRow({
+    fileId,
+    movieId,
+    tvEpisodeId,
+    seasonId,
+    reason,
+  }: {
+    fileId: number;
+    movieId: number | null;
+    tvEpisodeId: number | null;
+    seasonId?: number;
+    reason: 'hidden-library-folder' | 'missing-library-file';
+  }) {
+    await this.fileDAO.delete(fileId);
+
+    this.logger.warn('removed invalid library file association', {
+      fileId,
+      movieId,
+      tvEpisodeId,
+      reason,
+    });
+
+    if (tvEpisodeId) {
+      await this.markEpisodeMissingWhenItHasNoFiles(tvEpisodeId);
+    }
+
+    if (seasonId) {
+      await this.markSeasonMissingWhenItHasNoFiles(seasonId);
+    }
+
+    if (movieId) {
+      await this.markMovieMissingWhenItHasNoFiles(movieId);
+    }
+  }
+
+  private async markEpisodeMissingWhenItHasNoFiles(tvEpisodeId: number) {
+    const remainingFiles = await this.fileDAO.count({
+      where: { tvEpisodeId },
+    });
+
+    if (remainingFiles > 0) {
+      return;
+    }
+
+    await this.tvEpisodeDAO.update(
+      { id: tvEpisodeId },
+      { state: DownloadableMediaState.MISSING }
+    );
+  }
+
+  private async markSeasonMissingWhenItHasNoFiles(seasonId: number) {
+    const remainingFiles = await this.fileDAO
+      .createQueryBuilder('file')
+      .innerJoin('file.tvEpisode', 'episode')
+      .where('episode.seasonId = :seasonId', { seasonId })
+      .getCount();
+
+    if (remainingFiles > 0) {
+      return;
+    }
+
+    await this.tvSeasonDAO.update(
+      { id: seasonId },
+      { state: DownloadableMediaState.MISSING }
+    );
+  }
+
+  private async markMovieMissingWhenItHasNoFiles(movieId: number) {
+    const remainingFiles = await this.fileDAO.count({
+      where: { movieId },
+    });
+
+    if (remainingFiles > 0) {
+      return;
+    }
+
+    await this.movieDAO.update(
+      { id: movieId },
+      { state: DownloadableMediaState.MISSING }
+    );
   }
 }

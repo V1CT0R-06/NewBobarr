@@ -7,6 +7,34 @@ export interface ParsedEpisodeFile {
   episodeNumber: number;
 }
 
+export function isVisibleLibraryFolderName(folderName: string) {
+  return !folderName.startsWith('.');
+}
+
+export function isPathInsideLibraryRoot(filePath: string, libraryRoot: string) {
+  const relativePath = path.relative(libraryRoot, filePath);
+
+  return (
+    Boolean(relativePath) &&
+    !relativePath.startsWith('..') &&
+    !path.isAbsolute(relativePath)
+  );
+}
+
+export function isPathInsideHiddenLibraryFolder(
+  filePath: string,
+  libraryRoot: string
+) {
+  if (!isPathInsideLibraryRoot(filePath, libraryRoot)) {
+    return false;
+  }
+
+  return path
+    .relative(libraryRoot, filePath)
+    .split(path.sep)
+    .some((part) => part.startsWith('.'));
+}
+
 export function normalizeMediaTitle(value: string) {
   return value
     .replace(/^\.+/, '')

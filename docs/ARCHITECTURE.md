@@ -203,14 +203,22 @@ scanner.
 The scanner:
 
 1. scans configured Movies and TV Shows folders;
-2. ignores non-video files;
+2. ignores hidden dot-prefixed folders and non-video files;
 3. parses TV filenames such as `S01E01`, `S1E1`, `s01e01`, and `2x05`;
 4. matches the show folder to an existing show or TMDB result;
 5. creates missing seasons and episodes when the match is high-confidence;
 6. associates file rows with `tvEpisodeId` or `movieId`;
 7. marks confidently imported episodes processed;
-8. logs ambiguous files instead of guessing;
-9. never deletes media.
+8. removes stale File associations when the trusted library path is gone;
+9. logs ambiguous files instead of guessing;
+10. never deletes media.
+
+Hidden folders are ignored on purpose. For example,
+`/usr/library/tvshows/.The Simpsons` can contain old or staged files, but Bobarr
+will not treat those files as downloaded episodes. If a stale database `file`
+row points into a hidden folder or to a file that no longer exists, scan
+reconciliation removes only that database association and returns the movie or
+episode to `missing` when no trusted file remains.
 
 The important code lives in:
 
@@ -243,6 +251,8 @@ For frontend flows:
 ## Development tips
 
 - Keep media safety first. Do not delete files to fix a database issue.
+- A `file` row is trusted only when its path points to a visible library folder
+  and the file still exists.
 - Prefer clear logs for skipped/ambiguous reconciliation cases.
 - If a backend GraphQL field changes, regenerate web GraphQL types.
 - Add tests for parsing and reconciliation edge cases.

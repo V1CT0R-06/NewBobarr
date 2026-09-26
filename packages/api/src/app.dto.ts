@@ -13,10 +13,15 @@ export enum JobName {
 }
 
 export enum DownloadableMediaState {
+  // Bobarr is looking for a torrent/search result for this resource.
   SEARCHING = 'searching',
+  // Bobarr knows about the resource, but there is no trusted local media file.
   MISSING = 'missing',
+  // Transmission has accepted a torrent and media is still transferring.
   DOWNLOADING = 'downloading',
+  // A season-level resource has all expected episodes available locally.
   DOWNLOADED = 'downloaded',
+  // A movie or episode has been organized and linked to a trusted File row.
   PROCESSED = 'processed',
 }
 
