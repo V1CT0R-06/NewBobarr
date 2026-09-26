@@ -1,9 +1,6 @@
-version: "3.6"
-
 services:
   vpn:
     image: dperson/openvpn-client
-    container_name: bobarr-vpn
     cap_add:
       - net_admin
     security_opt:

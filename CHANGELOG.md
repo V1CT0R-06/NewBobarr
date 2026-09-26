@@ -4,6 +4,14 @@
 
 ### Changed
 
+- rewrite the README as a beginner-friendly guide for the maintained Bobarr
+  fork
+- document the application architecture, background jobs, integrations,
+  monitoring, and reconciliation flow
+- refactor the library reconciliation processor into smaller helper methods
+  with clearer names and summary reporting
+- remove fixed public Compose container names so multiple installs and test
+  stacks can run without name collisions
 - prepare repository for standalone public fork use
 - make the default Compose deployment build local API/Web images from source
 - replace tracked runtime `.env` with `.env.example`
@@ -13,6 +21,10 @@
 
 ### Added
 
+- add light/dark theme support with dark mode as the default and a navbar
+  toggle that persists in the browser
+- add cleaner, more compact UI styling for navigation, cards, settings,
+  activity, and TV episode statuses
 - add native library reconciliation for existing TV and movie files
 - add high-confidence TV filename parsing for common `S01E01`, `S1E1`,
   `s01e01`, and `2x05` episode patterns
