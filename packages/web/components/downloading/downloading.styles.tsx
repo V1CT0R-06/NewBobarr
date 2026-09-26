@@ -118,4 +118,29 @@ export const DownloadingComponentStyles = styled.div`
       background-color: ${({ theme }) => theme.colors.border};
     }
   }
+
+  @media (max-width: 700px) {
+    .download-row {
+      align-items: stretch;
+      flex-direction: column;
+      gap: 6px;
+
+      .status,
+      .torrent-name,
+      .speed {
+        margin-left: 0;
+        margin-right: 0;
+      }
+
+      .name,
+      .torrent-name {
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      .progress {
+        width: 100%;
+      }
+    }
+  }
 `;

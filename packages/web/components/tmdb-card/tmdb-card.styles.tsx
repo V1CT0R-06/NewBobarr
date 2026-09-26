@@ -62,6 +62,7 @@ export const TMDBCardStyles = styled.div`
   .name {
     font-weight: 700;
     margin-bottom: 2px;
+    overflow-wrap: anywhere;
   }
 
   .date {
@@ -75,5 +76,28 @@ export const TMDBCardStyles = styled.div`
     position: absolute;
     top: 310px;
     left: 14px;
+  }
+
+  @media (max-width: 700px) {
+    width: 100%;
+
+    .poster--container {
+      aspect-ratio: 2 / 3;
+      height: auto;
+      margin-bottom: 14px;
+      width: 100%;
+
+      .poster,
+      .overlay {
+        height: 100%;
+        width: 100%;
+      }
+    }
+
+    .vote--container {
+      top: auto;
+      bottom: 48px;
+      left: 10px;
+    }
   }
 `;

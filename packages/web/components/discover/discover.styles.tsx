@@ -4,7 +4,7 @@ export const DiscoverStyles = styled.div`
   .wrapper {
     max-width: 1200px;
     margin: 0 auto;
-    padding-right: 0 32px;
+    padding: 0 16px;
   }
 
   .flex {
@@ -52,6 +52,36 @@ export const DiscoverStyles = styled.div`
       > div {
         display: inline-block;
         padding-bottom: 20px;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .flex {
+      display: block;
+    }
+
+    .discover {
+      &--filter {
+        margin-bottom: 20px;
+        margin-right: 0;
+      }
+
+      &--filter-entertainment {
+        label:first-of-type {
+          margin-right: 12px;
+        }
+      }
+
+      &--result-cards-container {
+        display: grid;
+        gap: 20px 14px;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        justify-content: stretch;
+
+        > div {
+          padding-bottom: 0;
+        }
       }
     }
   }

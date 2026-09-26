@@ -7,6 +7,7 @@
     "watch-next": "next dev",
     "watch-gql": "gql-gen --watch",
     "build": "next build",
+    "test": "node test/theme-regression.test.js",
     "start": "next start",
     "gql-gen": "graphql-codegen --config codegen.yml"
   },

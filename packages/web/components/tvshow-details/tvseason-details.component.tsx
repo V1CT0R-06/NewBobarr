@@ -133,7 +133,7 @@ export function TVSeasonDetailsComponent({
         const { color, label } = getEpisodeStatus(row);
 
         return (
-          <Tag color={color} style={{ width: 110, textAlign: 'center' }}>
+          <Tag color={color} className="episode-status-tag">
             {label}
           </Tag>
         );
@@ -148,7 +148,7 @@ export function TVSeasonDetailsComponent({
         const canToggleMonitoring = canToggleEpisodeMonitoring(row);
 
         return (
-          <>
+          <div className="episode-actions">
             {canToggleMonitoring && (
               <Tag
                 onClick={() =>
@@ -159,7 +159,7 @@ export function TVSeasonDetailsComponent({
                     },
                   })
                 }
-                style={{ width: 120, textAlign: 'center', cursor: 'pointer' }}
+                className="episode-action-tag"
               >
                 {row.monitored ? 'Stop searching' : 'Monitor'}
               </Tag>
@@ -167,11 +167,11 @@ export function TVSeasonDetailsComponent({
             <Tag
               icon={<SearchOutlined />}
               onClick={() => setManualSearch(row)}
-              style={{ width: 120, textAlign: 'center', cursor: 'pointer' }}
+              className="episode-action-tag"
             >
               {inLibrary ? 'Replace' : 'Search'} episode
             </Tag>
-          </>
+          </div>
         );
       },
     },

@@ -5,6 +5,7 @@ export const MovieDetailsStyles = styled.div`
   -webkit-overflow-scrolling: touch;
   max-height: 80vh;
   position: relative;
+  color: #ffffff;
 
   ::-webkit-scrollbar {
     width: 0px;
@@ -75,8 +76,8 @@ export const MovieDetailsStyles = styled.div`
   .header-background-overlay {
     background-image: linear-gradient(
       to right,
-      rgba(12.94%, 14.9%, 22.75%, 1) 150px,
-      rgba(20.39%, 22.35%, 29.02%, 0.84) 100%
+      #111827 150px,
+      ${({ theme }) => theme.colors.overlay} 100%
     );
     height: 100%;
     position: absolute;
@@ -152,6 +153,7 @@ export const MovieDetailsStyles = styled.div`
   .overview {
     font-size: 1.2em;
     max-width: 780px;
+    color: rgba(255, 255, 255, 0.92);
   }
 
   .buttons {
@@ -180,6 +182,81 @@ export const MovieDetailsStyles = styled.div`
     em {
       margin-left: 8px;
       font-family: monospace;
+    }
+  }
+
+  @media (max-width: 700px) {
+    max-height: calc(100vh - 16px);
+
+    .header-container {
+      min-height: 100%;
+    }
+
+    .header-background-overlay {
+      background-image: linear-gradient(
+        to bottom,
+        rgba(17, 24, 39, 0.96),
+        ${({ theme }) => theme.colors.overlay}
+      );
+    }
+
+    .header-content {
+      display: block;
+      padding: 18px;
+    }
+
+    .poster-container {
+      margin: 0 auto 18px;
+      max-width: 180px;
+      width: 45vw;
+
+      .poster-image {
+        width: 100%;
+      }
+    }
+
+    .movie-details {
+      margin-left: 0;
+    }
+
+    .title {
+      align-items: flex-start;
+      flex-direction: column;
+      font-size: 1.6em;
+      line-height: 1.15;
+
+      .year {
+        margin-left: 0;
+        margin-top: 4px;
+      }
+    }
+
+    .informations-row,
+    .information-row {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .overview {
+      font-size: 1em;
+    }
+
+    .buttons {
+      flex-direction: column;
+      gap: 8px;
+
+      .btn {
+        justify-content: center;
+        margin-right: 0;
+        min-height: 42px;
+      }
+    }
+
+    .file-details li {
+      max-width: 100%;
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
   }
 `;

@@ -10,7 +10,7 @@ export const TVShowSeasonsModalComponentStyles = styled(MovieDetailsStyles)`
 
   .season-row {
     align-items: center;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.45);
     border-radius: 4px;
     cursor: pointer;
     display: flex;
@@ -69,9 +69,10 @@ export const TVShowSeasonsModalComponentStyles = styled(MovieDetailsStyles)`
       display: flex;
       align-items: center;
       margin-left: 32px;
-      border: 1px solid #fff5;
+      border: 1px solid rgba(255, 255, 255, 0.45);
       border-radius: 5px;
-      padding: 0 4px;
+      color: #ffffff;
+      padding: 4px 8px;
     }
 
     .season-number {
@@ -91,16 +92,125 @@ export const TVShowSeasonsModalComponentStyles = styled(MovieDetailsStyles)`
     }
 
     .ant-table {
-      color: #fff;
-      background: rgba(0, 0, 0, 0.4);
-      border-radius: 4px;
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 8px;
+      color: #ffffff;
 
-      tr :hover > td {
-        background: inherit;
+      .ant-table-cell {
+        background: transparent;
+        color: #ffffff;
       }
 
-      tr > td {
+      tr:hover > td {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      tr > td,
+      tr > th {
         border: none;
+      }
+    }
+
+    .episode-status-tag,
+    .episode-action-tag {
+      display: inline-block;
+      margin: 0;
+      min-height: 28px;
+      padding-top: 3px;
+      text-align: center;
+      width: 120px;
+    }
+
+    .episode-action-tag {
+      cursor: pointer;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .seasons {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    }
+
+    .season-row {
+      margin: 0;
+      max-width: none;
+      min-height: 48px;
+      width: 100%;
+    }
+
+    .seasons-details {
+      .season-top {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .season-title {
+        min-height: 42px;
+      }
+
+      .season-actions {
+        gap: 8px;
+      }
+
+      .season-replace {
+        justify-content: center;
+        margin-left: 0;
+        min-height: 40px;
+      }
+
+      .ant-table,
+      .ant-table-container,
+      .ant-table-content {
+        overflow-x: visible;
+      }
+
+      .ant-table-tbody > tr {
+        display: block;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+        padding: 8px 0;
+      }
+
+      .ant-table-tbody > tr > td {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 10px;
+        text-align: left !important;
+        width: 100%;
+      }
+
+      .ant-table-tbody > tr > td::before {
+        color: rgba(255, 255, 255, 0.7);
+        flex-shrink: 0;
+        font-weight: 700;
+        margin-right: 10px;
+      }
+
+      .ant-table-tbody > tr > td:nth-child(1)::before {
+        content: 'Episode';
+      }
+
+      .ant-table-tbody > tr > td:nth-child(2)::before {
+        content: 'Air date';
+      }
+
+      .ant-table-tbody > tr > td:nth-child(3)::before {
+        content: 'Status';
+      }
+
+      .ant-table-tbody > tr > td:nth-child(4)::before {
+        content: 'Actions';
+      }
+
+      .episode-actions {
+        align-items: stretch;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: min(180px, 100%);
       }
     }
   }
