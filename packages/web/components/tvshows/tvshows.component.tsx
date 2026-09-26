@@ -1,5 +1,4 @@
 import React from 'react';
-import Mansonry from 'react-masonry-component';
 import styled from 'styled-components';
 import { Skeleton, Empty } from 'antd';
 
@@ -39,7 +38,7 @@ export function TVShowsComponent() {
             ) : (
               <>
                 {renderSortable()}
-                <Mansonry className="flex">
+                <div className="flex">
                   {results.map((tvShow) => (
                     <div className="tvshow-card" key={tvShow.id}>
                       <TMDBCardComponent
@@ -49,7 +48,7 @@ export function TVShowsComponent() {
                       />
                     </div>
                   ))}
-                </Mansonry>
+                </div>
               </>
             )}
           </Skeleton>

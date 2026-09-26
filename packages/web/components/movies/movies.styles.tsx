@@ -4,15 +4,16 @@ export const MoviesComponentStyles = styled.div`
   padding-top: 32px;
 
   .wrapper {
-    max-width: 1200px;
+    /* Five original 220px Bobarr cards plus their 12px side gutters. */
+    max-width: 1220px;
     margin: 0 auto;
-    padding-left: 16px;
-    padding-right: 16px;
+    width: calc(100% - 32px);
   }
 
   .flex {
     display: flex;
     flex-wrap: wrap;
+    justify-content: flex-start;
     margin-left: -12px;
     margin-right: -12px;
   }

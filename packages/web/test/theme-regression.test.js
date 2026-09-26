@@ -161,6 +161,9 @@ const tvSeasonSource = read(
   'components/tvshow-details/tvseason-details.component.tsx'
 );
 const tvShowStyles = read('components/tvshow-details/tvshow-details.styles.tsx');
+const moviesSource = read('components/movies/movies.component.tsx');
+const moviesStyles = read('components/movies/movies.styles.tsx');
+const tvShowsSource = read('components/tvshows/tvshows.component.tsx');
 
 assert(
   appSource.includes("useState<ThemeMode>('dark')"),
@@ -195,6 +198,27 @@ assert(
     tvShowStyles.includes('.episode-action-tag') &&
     tvShowStyles.includes('!important'),
   'Episode controls need explicit theme-aware foreground/background/border styles'
+);
+
+assert(
+  moviesSource.includes('MoviesComponentStyles') &&
+    tvShowsSource.includes('styled(MoviesComponentStyles)'),
+  'Movies and TV Shows should share the same media grid layout styles'
+);
+assert(
+  !moviesSource.includes('react-masonry-component') &&
+    !tvShowsSource.includes('react-masonry-component'),
+  'Library grids should use Bobarr shared responsive CSS instead of Masonry inline positioning'
+);
+assert(
+  moviesStyles.includes('max-width: 1220px') &&
+    moviesStyles.includes('width: calc(100% - 32px)') &&
+    moviesStyles.includes('justify-content: flex-start'),
+  'Library grid should be centered and wide enough for five original 220px cards on desktop'
+);
+assert(
+  moviesStyles.includes('grid-template-columns: repeat(auto-fit, minmax(150px, 1fr))'),
+  'Library grid should keep the mobile responsive card layout'
 );
 
 assertEpisodeControlContrast();

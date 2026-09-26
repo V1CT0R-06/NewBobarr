@@ -1,5 +1,4 @@
 import React from 'react';
-import Mansonry from 'react-masonry-component';
 import { Skeleton, Empty } from 'antd';
 
 import { useGetLibraryMoviesQuery, EnrichedMovie } from '../../utils/graphql';
@@ -36,7 +35,7 @@ export function MoviesComponent() {
             ) : (
               <>
                 {renderSortable()}
-                <Mansonry className="flex">
+                <div className="flex">
                   {results.map((movie) => (
                     <div className="movie-card" key={movie.id}>
                       <TMDBCardComponent
@@ -46,7 +45,7 @@ export function MoviesComponent() {
                       />
                     </div>
                   ))}
-                </Mansonry>
+                </div>
               </>
             )}
           </Skeleton>
