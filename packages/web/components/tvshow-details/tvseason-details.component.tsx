@@ -34,25 +34,25 @@ function getEpisodeStatus(row: EnrichedTvEpisode) {
       DownloadableMediaState.Downloading,
     ].includes(row.state)
   ) {
-    return { color: 'default', label: 'Not monitored' };
+    return { className: 'episode-status--unmonitored', label: 'Not monitored' };
   }
 
   if (
     row.state === DownloadableMediaState.Processed ||
     row.state === DownloadableMediaState.Downloaded
   ) {
-    return { color: 'geekblue', label: 'Downloaded' };
+    return { className: 'episode-status--downloaded', label: 'Downloaded' };
   }
 
   if (row.state === DownloadableMediaState.Searching) {
-    return { color: 'purple', label: 'Searching' };
+    return { className: 'episode-status--searching', label: 'Searching' };
   }
 
   if (row.state === DownloadableMediaState.Downloading) {
-    return { color: 'blue', label: 'Downloading' };
+    return { className: 'episode-status--downloading', label: 'Downloading' };
   }
 
-  return { color: undefined, label: 'Missing' };
+  return { className: 'episode-status--missing', label: 'Missing' };
 }
 
 function canToggleEpisodeMonitoring(row: EnrichedTvEpisode) {
@@ -130,13 +130,9 @@ export function TVSeasonDetailsComponent({
       title: 'Status',
       align: 'right',
       render: (row: EnrichedTvEpisode) => {
-        const { color, label } = getEpisodeStatus(row);
+        const { className, label } = getEpisodeStatus(row);
 
-        return (
-          <Tag color={color} className="episode-status-tag">
-            {label}
-          </Tag>
-        );
+        return <Tag className={`episode-status-tag ${className}`}>{label}</Tag>;
       },
     },
     {

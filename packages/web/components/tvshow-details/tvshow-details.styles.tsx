@@ -10,7 +10,7 @@ export const TVShowSeasonsModalComponentStyles = styled(MovieDetailsStyles)`
 
   .season-row {
     align-items: center;
-    border: 1px solid rgba(255, 255, 255, 0.45);
+    border: 1px solid ${({ theme }) => theme.colors.border};
     border-radius: 4px;
     cursor: pointer;
     display: flex;
@@ -22,12 +22,12 @@ export const TVShowSeasonsModalComponentStyles = styled(MovieDetailsStyles)`
     max-width: 145px;
 
     &.selected {
-      border-color: #fff;
+      border-color: ${({ theme }) => theme.colors.blue};
     }
 
     &.in-library {
       cursor: not-allowed;
-      border-color: #fff;
+      border-color: ${({ theme }) => theme.colors.border};
     }
   }
 
@@ -69,10 +69,18 @@ export const TVShowSeasonsModalComponentStyles = styled(MovieDetailsStyles)`
       display: flex;
       align-items: center;
       margin-left: 32px;
-      border: 1px solid rgba(255, 255, 255, 0.45);
+      background: ${({ theme }) => theme.colors.buttonBackground};
+      border: 1px solid ${({ theme }) => theme.colors.border};
       border-radius: 5px;
-      color: #ffffff;
+      color: ${({ theme }) => theme.colors.buttonText};
       padding: 4px 8px;
+
+      &:hover,
+      &:focus {
+        background: ${({ theme }) => theme.colors.hover};
+        border-color: ${({ theme }) => theme.colors.blue};
+        color: ${({ theme }) => theme.colors.text};
+      }
     }
 
     .season-number {
@@ -92,18 +100,18 @@ export const TVShowSeasonsModalComponentStyles = styled(MovieDetailsStyles)`
     }
 
     .ant-table {
-      background: rgba(15, 23, 42, 0.72);
-      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: ${({ theme }) => theme.colors.surface};
+      border: 1px solid ${({ theme }) => theme.colors.border};
       border-radius: 8px;
-      color: #ffffff;
+      color: ${({ theme }) => theme.colors.text};
 
       .ant-table-cell {
         background: transparent;
-        color: #ffffff;
+        color: ${({ theme }) => theme.colors.text};
       }
 
       tr:hover > td {
-        background: rgba(255, 255, 255, 0.08);
+        background: ${({ theme }) => theme.colors.hover};
       }
 
       tr > td,
@@ -114,6 +122,11 @@ export const TVShowSeasonsModalComponentStyles = styled(MovieDetailsStyles)`
 
     .episode-status-tag,
     .episode-action-tag {
+      align-items: center;
+      background: ${({ theme }) => theme.colors.surfaceSecondary} !important;
+      border: 1px solid ${({ theme }) => theme.colors.border} !important;
+      border-radius: 6px;
+      color: ${({ theme }) => theme.colors.text} !important;
       display: inline-block;
       margin: 0;
       min-height: 28px;
@@ -123,7 +136,62 @@ export const TVShowSeasonsModalComponentStyles = styled(MovieDetailsStyles)`
     }
 
     .episode-action-tag {
+      background: ${({ theme }) => theme.colors.buttonBackground} !important;
+      color: ${({ theme }) => theme.colors.buttonText} !important;
       cursor: pointer;
+
+      &:hover,
+      &:focus {
+        background: ${({ theme }) => theme.colors.hover} !important;
+        border-color: ${({ theme }) => theme.colors.blue} !important;
+        color: ${({ theme }) => theme.colors.text} !important;
+      }
+    }
+
+    .episode-status--downloaded {
+      background: ${({ theme }) =>
+        theme.mode === 'dark'
+          ? 'rgba(96, 165, 250, 0.18)'
+          : '#dbeafe'} !important;
+      border-color: ${({ theme }) => theme.colors.blue} !important;
+      color: ${({ theme }) =>
+        theme.mode === 'dark' ? '#dbeafe' : '#1d4ed8'} !important;
+    }
+
+    .episode-status--downloading {
+      background: ${({ theme }) =>
+        theme.mode === 'dark'
+          ? 'rgba(52, 211, 153, 0.16)'
+          : '#d1fae5'} !important;
+      border-color: ${({ theme }) => theme.colors.success} !important;
+      color: ${({ theme }) =>
+        theme.mode === 'dark' ? '#bbf7d0' : '#065f46'} !important;
+    }
+
+    .episode-status--searching {
+      background: ${({ theme }) =>
+        theme.mode === 'dark'
+          ? 'rgba(251, 191, 36, 0.16)'
+          : '#fef3c7'} !important;
+      border-color: ${({ theme }) => theme.colors.warning} !important;
+      color: ${({ theme }) =>
+        theme.mode === 'dark' ? '#fde68a' : '#92400e'} !important;
+    }
+
+    .episode-status--missing {
+      background: ${({ theme }) =>
+        theme.mode === 'dark'
+          ? 'rgba(251, 113, 133, 0.16)'
+          : '#fee2e2'} !important;
+      border-color: ${({ theme }) => theme.colors.error} !important;
+      color: ${({ theme }) =>
+        theme.mode === 'dark' ? '#fecdd3' : '#991b1b'} !important;
+    }
+
+    .episode-status--unmonitored {
+      background: ${({ theme }) => theme.colors.surfaceElevated} !important;
+      border-color: ${({ theme }) => theme.colors.border} !important;
+      color: ${({ theme }) => theme.colors.mutedText} !important;
     }
   }
 
@@ -170,7 +238,7 @@ export const TVShowSeasonsModalComponentStyles = styled(MovieDetailsStyles)`
 
       .ant-table-tbody > tr {
         display: block;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+        border-bottom: 1px solid ${({ theme }) => theme.colors.border};
         padding: 8px 0;
       }
 
@@ -183,7 +251,7 @@ export const TVShowSeasonsModalComponentStyles = styled(MovieDetailsStyles)`
       }
 
       .ant-table-tbody > tr > td::before {
-        color: rgba(255, 255, 255, 0.7);
+        color: ${({ theme }) => theme.colors.textSecondary};
         flex-shrink: 0;
         font-weight: 700;
         margin-right: 10px;

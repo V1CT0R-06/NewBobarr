@@ -74,6 +74,53 @@ function assert(condition, message) {
   }
 }
 
+function assertEpisodeControlContrast() {
+  [
+    {
+      description: 'dark downloaded episode status',
+      foreground: '#dbeafe',
+      background: '#243a5f',
+      minimumRatio: 4.5,
+    },
+    {
+      description: 'dark downloading episode status',
+      foreground: '#bbf7d0',
+      background: '#1d473c',
+      minimumRatio: 4.5,
+    },
+    {
+      description: 'dark searching episode status',
+      foreground: '#fde68a',
+      background: '#423a25',
+      minimumRatio: 4.5,
+    },
+    {
+      description: 'dark missing episode status',
+      foreground: '#fecdd3',
+      background: '#422938',
+      minimumRatio: 4.5,
+    },
+    {
+      description: 'light downloaded episode status',
+      foreground: '#1d4ed8',
+      background: '#dbeafe',
+      minimumRatio: 4.5,
+    },
+    {
+      description: 'light disabled button text',
+      foreground: light.mutedText,
+      background: light.surfaceSecondary,
+      minimumRatio: 3,
+    },
+    {
+      description: 'dark disabled button text',
+      foreground: dark.mutedText,
+      background: dark.surfaceSecondary,
+      minimumRatio: 3,
+    },
+  ].forEach(assertContrast);
+}
+
 const dark = parseThemeColors('darkTheme');
 const light = parseThemeColors('lightTheme');
 
@@ -110,6 +157,10 @@ const light = parseThemeColors('lightTheme');
 const appSource = read('pages/_app.tsx');
 const documentSource = read('pages/_document.tsx');
 const navbarSource = read('components/navbar/navbar.component.tsx');
+const tvSeasonSource = read(
+  'components/tvshow-details/tvseason-details.component.tsx'
+);
+const tvShowStyles = read('components/tvshow-details/tvshow-details.styles.tsx');
 
 assert(
   appSource.includes("useState<ThemeMode>('dark')"),
@@ -128,5 +179,24 @@ assert(
   navbarSource.includes('toggleMode') && navbarSource.includes('theme-toggle'),
   'Navbar should expose a theme toggle'
 );
+assert(
+  !tvSeasonSource.includes('<Tag color='),
+  'Episode status tags must not use Ant preset tag colors; they bypass Bobarr dark theme contrast'
+);
+assert(
+  tvSeasonSource.includes('episode-status--downloaded') &&
+    tvSeasonSource.includes('episode-status--unmonitored') &&
+    tvSeasonSource.includes('episode-action-tag'),
+  'Episode rows should use semantic status/action classes'
+);
+assert(
+  tvShowStyles.includes('.episode-status--downloaded') &&
+    tvShowStyles.includes('.episode-status--unmonitored') &&
+    tvShowStyles.includes('.episode-action-tag') &&
+    tvShowStyles.includes('!important'),
+  'Episode controls need explicit theme-aware foreground/background/border styles'
+);
+
+assertEpisodeControlContrast();
 
 console.log('Theme regression checks passed');

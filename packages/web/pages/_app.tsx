@@ -181,6 +181,16 @@ const GlobalStyles = createGlobalStyle`
     color: ${({ theme }) => (theme.mode === 'dark' ? '#082f49' : '#ffffff')};
   }
 
+  .ant-btn[disabled],
+  .ant-btn[disabled]:hover,
+  .ant-btn[disabled]:focus,
+  .ant-btn[disabled]:active {
+    background: ${({ theme }) => theme.colors.surfaceSecondary} !important;
+    border-color: ${({ theme }) => theme.colors.border} !important;
+    color: ${({ theme }) => theme.colors.mutedText} !important;
+    opacity: 0.85;
+  }
+
   .ant-table-tbody > tr.ant-table-row:hover > td {
     background: ${({ theme }) => theme.colors.hover};
   }
@@ -224,8 +234,14 @@ const GlobalStyles = createGlobalStyle`
   }
 
   .ant-tag {
+    background: ${({ theme }) => theme.colors.surfaceSecondary};
     border-color: ${({ theme }) => theme.colors.border};
     color: ${({ theme }) => theme.colors.text};
+  }
+
+  .ant-tag a,
+  .ant-tag span {
+    color: inherit;
   }
 
   .ant-modal {
