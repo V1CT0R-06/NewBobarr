@@ -32,7 +32,7 @@ export function SearchingRowsComponent({ rows }: { rows: SearchingMedia[] }) {
       {searching.map((row) => (
         <div key={row.id} className="download-row">
           <div className="status">
-            <Tag color="purple">
+            <Tag className="status-tag searching">
               Searching <LoadingOutlined style={{ marginLeft: 10 }} />
             </Tag>
           </div>
