@@ -95,6 +95,23 @@ export class JobsService {
     );
   }
 
+  public async removeDownloadEpisodeJobs(episodeId: number) {
+    this.logger.info('remove queued download episode jobs', { episodeId });
+    const jobs = await this.downloadQueue.getJobs([
+      'waiting',
+      'delayed',
+      'paused',
+    ]);
+    const matchingJobs = jobs.filter(
+      (job) =>
+        job.name === DownloadQueueProcessors.DOWNLOAD_EPISODE &&
+        job.data === episodeId
+    );
+
+    await Promise.all(matchingJobs.map((job) => job.remove()));
+    return matchingJobs.length;
+  }
+
   public startScanLibrary(options?: JobOptions) {
     this.logger.info('add scan library job');
     return this.scanLibraryQueue.add(

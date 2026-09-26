@@ -23,7 +23,12 @@ export function DownloadingComponent({ types }: { types: string[] }) {
   return (
     <DownloadingComponentStyles>
       <div className="wrapper">
-        <SearchingRowsComponent rows={searching || []} />
+        {(!searching || searching.length === 0) &&
+        (!downloading || downloading.length === 0) ? (
+          <div className="empty-state">No active searches or downloads.</div>
+        ) : (
+          <SearchingRowsComponent rows={searching || []} />
+        )}
         {/* dont mount downloading rows when it's not needed */}
         {/* this component does request polling */}
         {downloading && downloading.length > 0 && (

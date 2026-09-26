@@ -1,0 +1,29 @@
+mutation setTVEpisodeMonitored($episodeId: Int!, $monitored: Boolean!) {
+  result: setTVEpisodeMonitored(
+    episodeId: $episodeId
+    monitored: $monitored
+  ) {
+    success
+    message
+  }
+}
+
+mutation setTVSeasonMonitored($seasonId: Int!, $monitored: Boolean!) {
+  result: setTVSeasonMonitored(seasonId: $seasonId, monitored: $monitored) {
+    success
+    message
+  }
+}
+
+mutation setTVShowMissingEpisodesMonitored(
+  $tvShowId: Int!
+  $monitored: Boolean!
+) {
+  result: setTVShowMissingEpisodesMonitored(
+    tvShowId: $tvShowId
+    monitored: $monitored
+  ) {
+    success
+    message
+  }
+}

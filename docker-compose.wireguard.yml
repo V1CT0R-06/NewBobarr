@@ -1,9 +1,6 @@
-version: "3.6"
-
 services:
   vpn:
     image: linuxserver/wireguard
-    container_name: bobarr-vpn
     env_file: .env
     cap_add:
       - NET_ADMIN

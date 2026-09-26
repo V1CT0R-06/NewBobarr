@@ -6,6 +6,8 @@ export const DB_CONFIG = {
   password: process.env.POSTGRES_PASSWORD,
   database: process.env.POSTGRES_DB,
   entities: [`${__dirname}/entities/*.entity{.ts,.js}`],
+  migrations: [`${__dirname}/migrations/*{.ts,.js}`],
+  migrationsRun: true,
   synchronize: true,
 };
 

@@ -59,9 +59,10 @@ elif [[ $args == 'stop' ]]; then
   echo ""
   echo "bobarr correctly stopped"
 elif [[ $args == 'update' ]]; then
-  $COMPOSE_VERSION pull
+  $COMPOSE_VERSION pull --ignore-buildable || true
+  $COMPOSE_VERSION build api web
   echo ""
-  echo "bobarr docker images correctly updated, you can now re-start bobarr"
+  echo "bobarr docker images correctly updated/built, you can now re-start bobarr"
 else
   echo "unknow command: $args"
   echo "use [start | start:vpn | start:wireguard | stop | update]"

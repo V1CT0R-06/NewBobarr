@@ -6,11 +6,20 @@ export const DownloadingComponentStyles = styled.div`
     max-width: 1200px;
   }
 
+  .empty-state {
+    color: ${({ theme }) => theme.colors.mutedText};
+    font-size: 0.9em;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
   .download-row {
-    background: #fff;
-    border-radius: 4px;
     align-items: center;
-    padding: 5px 8px;
+    background: ${({ theme }) => theme.colors.surface};
+    border: 1px solid ${({ theme }) => theme.colors.border};
+    border-radius: 8px;
+    color: ${({ theme }) => theme.colors.text};
+    padding: 6px 10px;
     font-size: 0.8em;
     margin-bottom: 8px;
     display: flex;
@@ -37,6 +46,7 @@ export const DownloadingComponentStyles = styled.div`
     }
 
     .torrent-name {
+      color: ${({ theme }) => theme.colors.mutedText};
       font-size: 0.7em;
       margin-left: 4px;
       margin-right: 12px;

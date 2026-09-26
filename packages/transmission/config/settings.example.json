@@ -1,0 +1,17 @@
+{
+  "download-dir": "/downloads/complete",
+  "incomplete-dir": "/downloads/incomplete",
+  "incomplete-dir-enabled": true,
+  "rpc-authentication-required": false,
+  "rpc-bind-address": "0.0.0.0",
+  "rpc-enabled": true,
+  "rpc-host-whitelist": "",
+  "rpc-host-whitelist-enabled": false,
+  "rpc-port": 9091,
+  "rpc-url": "/transmission/",
+  "rpc-username": "",
+  "rpc-whitelist": "127.0.0.1",
+  "rpc-whitelist-enabled": false,
+  "watch-dir": "/watch",
+  "watch-dir-enabled": true
+}

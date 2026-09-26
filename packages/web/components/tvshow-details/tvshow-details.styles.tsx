@@ -53,6 +53,12 @@ export const TVShowSeasonsModalComponentStyles = styled(MovieDetailsStyles)`
       align-items: center;
     }
 
+    .season-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
     .season-title,
     .season-replace {
       cursor: pointer;

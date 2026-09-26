@@ -64,8 +64,8 @@ export class DownloadProcessor {
   public async downloadMovie({ data: movieId }: Job<number>) {
     this.logger.info('start download movie', { movieId });
 
-    const [bestResult] = await this.jackettService.searchMovie(movieId);
     if (!(await this.canRun({ movieId }))) return;
+    const [bestResult] = await this.jackettService.searchMovie(movieId);
 
     if (bestResult === undefined) {
       this.logger.error('movie torrent not found');
@@ -94,8 +94,8 @@ export class DownloadProcessor {
   public async downloadSeason({ data: seasonId }: Job<number>) {
     this.logger.info('start download season', { seasonId });
 
-    const [bestResult] = await this.jackettService.searchSeason(seasonId);
     if (!(await this.canRun({ seasonId }))) return;
+    const [bestResult] = await this.jackettService.searchSeason(seasonId);
 
     if (bestResult === undefined) {
       this.logger.error('season not found, will split download into episodes');
@@ -113,11 +113,13 @@ export class DownloadProcessor {
 
       // season can already be removed from library
       if (season) {
-        await forEachSeries(season.episodes, (episode) =>
-          this.downloadQueue.add(
-            DownloadQueueProcessors.DOWNLOAD_EPISODE,
-            episode.id
-          )
+        await forEachSeries(
+          season.episodes.filter((episode) => episode.monitored),
+          (episode) =>
+            this.downloadQueue.add(
+              DownloadQueueProcessors.DOWNLOAD_EPISODE,
+              episode.id
+            )
         );
       }
 
@@ -142,8 +144,8 @@ export class DownloadProcessor {
   public async downloadEpisode({ data: episodeId }: Job<number>) {
     this.logger.info('start download episode', { episodeId });
 
-    const [bestResult] = await this.jackettService.searchEpisode(episodeId);
     if (!(await this.canRun({ episodeId }))) return;
+    const [bestResult] = await this.jackettService.searchEpisode(episodeId);
 
     if (bestResult === undefined) {
       this.logger.error('episode torrent not found');
@@ -179,7 +181,10 @@ export class DownloadProcessor {
     if (
       (media.movieId && !(await this.movieDAO.findOne(media.movieId))) ||
       (media.seasonId && !(await this.tvSeasonDAO.findOne(media.seasonId))) ||
-      (media.episodeId && !(await this.tvEpisodeDAO.findOne(media.episodeId)))
+      (media.episodeId &&
+        !(await this.tvEpisodeDAO.findOne({
+          where: { id: media.episodeId, monitored: true },
+        })))
     ) {
       this.logger.warn(
         'media already removed from database, this job will stop',

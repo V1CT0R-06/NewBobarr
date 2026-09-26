@@ -7,6 +7,8 @@ import { FaChevronCircleDown, FaChevronCircleRight } from 'react-icons/fa';
 
 import {
   useGetTvSeasonDetailsQuery,
+  useSetTvEpisodeMonitoredMutation,
+  useSetTvSeasonMonitoredMutation,
   TmdbFormattedTvSeason,
   EnrichedTvEpisode,
   DownloadableMediaState,
@@ -23,6 +25,44 @@ interface TVSeasonDetailsProps {
   tvShowTitle: string;
 }
 
+function getEpisodeStatus(row: EnrichedTvEpisode) {
+  if (
+    !row.monitored &&
+    [
+      DownloadableMediaState.Missing,
+      DownloadableMediaState.Searching,
+      DownloadableMediaState.Downloading,
+    ].includes(row.state)
+  ) {
+    return { color: 'default', label: 'Not monitored' };
+  }
+
+  if (
+    row.state === DownloadableMediaState.Processed ||
+    row.state === DownloadableMediaState.Downloaded
+  ) {
+    return { color: 'geekblue', label: 'Downloaded' };
+  }
+
+  if (row.state === DownloadableMediaState.Searching) {
+    return { color: 'purple', label: 'Searching' };
+  }
+
+  if (row.state === DownloadableMediaState.Downloading) {
+    return { color: 'blue', label: 'Downloading' };
+  }
+
+  return { color: undefined, label: 'Missing' };
+}
+
+function canToggleEpisodeMonitoring(row: EnrichedTvEpisode) {
+  return [
+    DownloadableMediaState.Missing,
+    DownloadableMediaState.Searching,
+    DownloadableMediaState.Downloading,
+  ].includes(row.state);
+}
+
 export function TVSeasonDetailsComponent({
   tvShowTMDBId,
   season,
@@ -36,6 +76,41 @@ export function TVSeasonDetailsComponent({
     fetchPolicy: 'cache-and-network',
     variables: { tvShowTMDBId, seasonNumber: season.seasonNumber },
   });
+
+  const refetchSeasonDetails = [
+    {
+      query: GetTvSeasonDetailsDocument,
+      variables: {
+        tvShowTMDBId,
+        seasonNumber: season.seasonNumber,
+      },
+    },
+  ];
+
+  const [setTVEpisodeMonitored] = useSetTvEpisodeMonitoredMutation({
+    refetchQueries: refetchSeasonDetails,
+    awaitRefetchQueries: true,
+  });
+
+  const [setTVSeasonMonitored] = useSetTvSeasonMonitoredMutation({
+    refetchQueries: refetchSeasonDetails,
+    awaitRefetchQueries: true,
+  });
+
+  const seasonId = data?.episodes?.[0]?.seasonId;
+  const missingEpisodes = data?.episodes?.filter((episode) =>
+    [
+      DownloadableMediaState.Missing,
+      DownloadableMediaState.Searching,
+      DownloadableMediaState.Downloading,
+    ].includes(episode.state)
+  );
+  const hasMonitoredMissingEpisodes = missingEpisodes?.some(
+    (episode) => episode.monitored
+  );
+  const hasUnmonitoredMissingEpisodes = missingEpisodes?.some(
+    (episode) => !episode.monitored
+  );
 
   const toggle = () => {
     setIsOpen(!isOpen);
@@ -55,27 +130,10 @@ export function TVSeasonDetailsComponent({
       title: 'Status',
       align: 'right',
       render: (row: EnrichedTvEpisode) => {
-        let color: string | undefined = undefined;
-        let label = 'Missing';
-
-        if (
-          row.state === DownloadableMediaState.Processed ||
-          row.state === DownloadableMediaState.Downloaded
-        ) {
-          color = 'geekblue';
-          label = 'Downloaded';
-        }
-
-        if (
-          row.state === DownloadableMediaState.Searching ||
-          row.state === DownloadableMediaState.Downloading
-        ) {
-          color = 'blue';
-          label = 'Downloading';
-        }
+        const { color, label } = getEpisodeStatus(row);
 
         return (
-          <Tag color={color} style={{ width: 90, textAlign: 'center' }}>
+          <Tag color={color} style={{ width: 110, textAlign: 'center' }}>
             {label}
           </Tag>
         );
@@ -87,14 +145,33 @@ export function TVSeasonDetailsComponent({
       width: 100,
       render: (row: EnrichedTvEpisode) => {
         const inLibrary = row.state !== DownloadableMediaState.Missing;
+        const canToggleMonitoring = canToggleEpisodeMonitoring(row);
+
         return (
-          <Tag
-            icon={<SearchOutlined />}
-            onClick={() => setManualSearch(row)}
-            style={{ width: 120, textAlign: 'center', cursor: 'pointer' }}
-          >
-            {inLibrary ? 'Replace' : 'Search'} episode
-          </Tag>
+          <>
+            {canToggleMonitoring && (
+              <Tag
+                onClick={() =>
+                  setTVEpisodeMonitored({
+                    variables: {
+                      episodeId: row.id,
+                      monitored: !row.monitored,
+                    },
+                  })
+                }
+                style={{ width: 120, textAlign: 'center', cursor: 'pointer' }}
+              >
+                {row.monitored ? 'Stop searching' : 'Monitor'}
+              </Tag>
+            )}
+            <Tag
+              icon={<SearchOutlined />}
+              onClick={() => setManualSearch(row)}
+              style={{ width: 120, textAlign: 'center', cursor: 'pointer' }}
+            >
+              {inLibrary ? 'Replace' : 'Search'} episode
+            </Tag>
+          </>
         );
       },
     },
@@ -135,14 +212,35 @@ export function TVSeasonDetailsComponent({
               </div>
             )}
           </div>
-          <div
-            className="season-replace"
-            onClick={() =>
-              setManualSearch({ ...season, tvShowTitle, tvShowTMDBId })
-            }
-          >
-            {season.inLibrary ? 'Replace' : 'Search'} season
-            <SearchOutlined style={{ marginLeft: 8 }} />
+          <div className="season-actions">
+            {seasonId &&
+              (hasMonitoredMissingEpisodes ||
+                hasUnmonitoredMissingEpisodes) && (
+                <div
+                  className="season-replace"
+                  onClick={() =>
+                    setTVSeasonMonitored({
+                      variables: {
+                        seasonId,
+                        monitored: !hasMonitoredMissingEpisodes,
+                      },
+                    })
+                  }
+                >
+                  {hasMonitoredMissingEpisodes
+                    ? 'Stop searching season'
+                    : 'Monitor season'}
+                </div>
+              )}
+            <div
+              className="season-replace"
+              onClick={() =>
+                setManualSearch({ ...season, tvShowTitle, tvShowTMDBId })
+              }
+            >
+              {season.inLibrary ? 'Replace' : 'Search'} season
+              <SearchOutlined style={{ marginLeft: 8 }} />
+            </div>
           </div>
         </div>
         {isOpen && (

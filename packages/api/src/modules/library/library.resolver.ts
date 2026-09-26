@@ -135,6 +135,46 @@ export class LibraryResolver {
     return { success: true, message: 'TV_EPISODE_DOWNLOAD_STARTED' };
   }
 
+  @Mutation((_returns) => GraphQLCommonResponse)
+  public async setTVEpisodeMonitored(
+    @Args('episodeId', { type: () => Int }) episodeId: number,
+    @Args('monitored') monitored: boolean
+  ) {
+    await this.libraryService.setTVEpisodeMonitored(episodeId, monitored, null);
+    return {
+      success: true,
+      message: monitored ? 'TV_EPISODE_MONITORED' : 'TV_EPISODE_UNMONITORED',
+    };
+  }
+
+  @Mutation((_returns) => GraphQLCommonResponse)
+  public async setTVSeasonMonitored(
+    @Args('seasonId', { type: () => Int }) seasonId: number,
+    @Args('monitored') monitored: boolean
+  ) {
+    await this.libraryService.setTVSeasonMonitored(seasonId, monitored, null);
+    return {
+      success: true,
+      message: monitored ? 'TV_SEASON_MONITORED' : 'TV_SEASON_UNMONITORED',
+    };
+  }
+
+  @Mutation((_returns) => GraphQLCommonResponse)
+  public async setTVShowMissingEpisodesMonitored(
+    @Args('tvShowId', { type: () => Int }) tvShowId: number,
+    @Args('monitored') monitored: boolean
+  ) {
+    await this.libraryService.setTVShowMissingEpisodesMonitored(
+      tvShowId,
+      monitored,
+      null
+    );
+    return {
+      success: true,
+      message: monitored ? 'TV_SHOW_MONITORED' : 'TV_SHOW_UNMONITORED',
+    };
+  }
+
   @UseInterceptors(
     makeInvalidateCacheInterceptor([CacheKeys.RECOMMENDED_MOVIES])
   )

@@ -9,13 +9,7 @@ import { Logger } from 'winston';
 import { times, orderBy, flatten } from 'lodash';
 import { Job, Queue } from 'bull';
 
-import {
-  Transaction,
-  TransactionManager,
-  EntityManager,
-  Like,
-  IsNull,
-} from 'typeorm';
+import { Transaction, TransactionManager, EntityManager } from 'typeorm';
 
 import {
   filterSeries,
@@ -35,14 +29,58 @@ import {
 
 import { sanitize } from 'src/utils/sanitize';
 
-import { JobsService } from 'src/modules/jobs//jobs.service';
+import { JobsService } from 'src/modules/jobs/jobs.service';
 import { TMDBService } from 'src/modules/tmdb/tmdb.service';
+import {
+  isAllowedVideoFile,
+  normalizeMediaTitle,
+  parseEpisodeFile,
+} from 'src/modules/library/reconciliation.helpers';
 
 import { MovieDAO } from 'src/entities/dao/movie.dao';
 import { TVShowDAO } from 'src/entities/dao/tvshow.dao';
 import { TVEpisodeDAO } from 'src/entities/dao/tvepisode.dao';
 import { TVSeasonDAO } from 'src/entities/dao/tvseason.dao';
 import { FileDAO } from 'src/entities/dao/file.dao';
+import { TVShow } from 'src/entities/tvshow.entity';
+import { TVSeason } from 'src/entities/tvseason.entity';
+
+interface TVShowScanSummary {
+  filesScanned: number;
+  episodesImported: number;
+  associationsCreated: number;
+  associationsRepaired: number;
+  ambiguousFilesSkipped: number;
+  nonVideoFilesSkipped: number;
+}
+
+function createEmptyTVShowScanSummary(): TVShowScanSummary {
+  return {
+    filesScanned: 0,
+    episodesImported: 0,
+    associationsCreated: 0,
+    associationsRepaired: 0,
+    ambiguousFilesSkipped: 0,
+    nonVideoFilesSkipped: 0,
+  };
+}
+
+function addTVShowScanSummary(
+  current: TVShowScanSummary,
+  next: TVShowScanSummary
+): TVShowScanSummary {
+  return {
+    filesScanned: current.filesScanned + next.filesScanned,
+    episodesImported: current.episodesImported + next.episodesImported,
+    associationsCreated: current.associationsCreated + next.associationsCreated,
+    associationsRepaired:
+      current.associationsRepaired + next.associationsRepaired,
+    ambiguousFilesSkipped:
+      current.ambiguousFilesSkipped + next.ambiguousFilesSkipped,
+    nonVideoFilesSkipped:
+      current.nonVideoFilesSkipped + next.nonVideoFilesSkipped,
+  };
+}
 
 @Processor(JobsQueue.SCAN_LIBRARY)
 export class ScanLibraryProcessor {
@@ -108,7 +146,7 @@ export class ScanLibraryProcessor {
       }
     });
 
-    this.logger.info('finish find new tsvhow episodes');
+    this.logger.info('finish find new tvshow episodes');
   }
 
   @Process(ScanLibraryQueueProcessors.SCAN_LIBRARY_FOLDER)
@@ -198,16 +236,30 @@ export class ScanLibraryProcessor {
       });
       return { match, file: path.join(movieFolder, file) };
     });
+    const allowedFiles = files.filter(({ file }) => isAllowedVideoFile(file));
+    const skippedFiles = files.length - allowedFiles.length;
 
-    const movieInDatabase = files.find((file) => file.match?.movie);
-    const untrackedFiles = files.filter((file) => !file.match);
+    const movieInDatabase = allowedFiles.find((file) => file.match?.movie);
+    const untrackedFiles = allowedFiles.filter((file) => !file.match?.movie);
 
     if (movieInDatabase) {
       this.logger.info('movie already tracked in library', { untrackedFiles });
 
-      await forEachSeries(untrackedFiles, ({ file }) =>
-        fileDAO.save({ path: file, movieId: movieInDatabase.match?.id })
+      await forEachSeries(untrackedFiles, ({ file, match }) =>
+        fileDAO.save({
+          id: match?.id,
+          path: file,
+          movieId: movieInDatabase.match?.movie?.id,
+          tvEpisodeId: null,
+        })
       );
+
+      this.logger.info('finish processing movie', {
+        movie,
+        filesScanned: allowedFiles.length,
+        skippedFiles,
+        associationsRepaired: untrackedFiles.length,
+      });
 
       return;
     }
@@ -225,8 +277,13 @@ export class ScanLibraryProcessor {
     if (matchByTitle) {
       this.logger.info('movie already in database', { title, year });
 
-      await forEachSeries(untrackedFiles, ({ file }) =>
-        fileDAO.save({ path: file, movieId: matchByTitle.id })
+      await forEachSeries(untrackedFiles, ({ file, match }) =>
+        fileDAO.save({
+          id: match?.id,
+          path: file,
+          movieId: matchByTitle.id,
+          tvEpisodeId: null,
+        })
       );
 
       return;
@@ -289,9 +346,21 @@ export class ScanLibraryProcessor {
         tmdbId: tmdbMovie.tmdbId,
       });
 
-      await forEachSeries(untrackedFiles, ({ file }) =>
-        fileDAO.save({ path: file, movieId: match.id })
+      await forEachSeries(untrackedFiles, ({ file, match: fileMatch }) =>
+        fileDAO.save({
+          id: fileMatch?.id,
+          path: file,
+          movieId: match.id,
+          tvEpisodeId: null,
+        })
       );
+
+      this.logger.info('finish processing movie', {
+        movie,
+        filesScanned: allowedFiles.length,
+        skippedFiles,
+        associationsRepaired: untrackedFiles.length,
+      });
     } else {
       const newMovie = await movieDAO.save({
         title,
@@ -299,12 +368,25 @@ export class ScanLibraryProcessor {
         state: DownloadableMediaState.PROCESSED,
       });
 
-      await forEachSeries(untrackedFiles, ({ file }) =>
-        fileDAO.save({ path: file, movieId: newMovie.id })
+      await forEachSeries(untrackedFiles, ({ file, match }) =>
+        fileDAO.save({
+          id: match?.id,
+          path: file,
+          movieId: newMovie.id,
+          tvEpisodeId: null,
+        })
       );
 
       this.logger.info('new movie saved in database', {
         tmdbId: tmdbMovie.tmdbId,
+      });
+
+      this.logger.info('finish processing movie', {
+        movie,
+        filesScanned: allowedFiles.length,
+        skippedFiles,
+        moviesImported: 1,
+        associationsRepaired: untrackedFiles.length,
       });
     }
   }
@@ -317,124 +399,204 @@ export class ScanLibraryProcessor {
   ) {
     this.logger.info('start processing tvshow', { tvshow });
 
-    const tvShowDAO = manager!.getCustomRepository(TVShowDAO);
-    const tvSeasonDAO = manager!.getCustomRepository(TVSeasonDAO);
-    const tvEpisodeDAO = manager!.getCustomRepository(TVEpisodeDAO);
-    const fileDAO = manager!.getCustomRepository(FileDAO);
-
-    const isTVShowInDatabase = await fileDAO.findOne({
-      where: { path: Like(`%${tvshow}%`), movieId: IsNull() },
-      relations: ['tvEpisode', 'tvEpisode.tvShow'],
-    });
-
-    let tvShow = isTVShowInDatabase
-      ? isTVShowInDatabase?.tvEpisode?.tvShow
-      : null;
+    const tvShow = await this.findOrCreateTVShowFromFolder(tvshow, manager!);
 
     if (!tvShow) {
-      const [tmdbResult] = await this.tmdbService.searchTVShow(tvshow, {
-        language: 'en',
+      return;
+    }
+
+    const episodeFilePaths = await this.getTVShowEpisodeFilePaths(tvshow);
+    let summary = createEmptyTVShowScanSummary();
+
+    await forEachSeries(episodeFilePaths, async (episodePath) => {
+      const fileSummary = await this.reconcileTVEpisodeFile({
+        episodePath,
+        tvShow,
+        manager: manager!,
       });
 
-      if (!tmdbResult) {
-        this.logger.error('tvshow not found on tmdb', { tvshow });
-        return;
+      summary = addTVShowScanSummary(summary, fileSummary);
+    });
+
+    this.logger.info('finish processing tvshow', { tvshow, ...summary });
+  }
+
+  private async findOrCreateTVShowFromFolder(
+    tvshowFolderName: string,
+    manager: EntityManager
+  ): Promise<TVShow | null> {
+    const tvShowDAO = manager.getCustomRepository(TVShowDAO);
+    const normalizedFolderName = normalizeMediaTitle(tvshowFolderName);
+    const existingTVShow = (await tvShowDAO.find()).find(
+      (candidate) =>
+        normalizeMediaTitle(candidate.title) === normalizedFolderName
+    );
+
+    if (existingTVShow) {
+      return existingTVShow;
+    }
+
+    const [tmdbResult] = await this.tmdbService.searchTVShow(tvshowFolderName, {
+      language: 'en',
+    });
+
+    if (!tmdbResult) {
+      this.logger.error('tvshow not found on tmdb', { tvshowFolderName });
+      return null;
+    }
+
+    this.logger.info('tvshow found on tmdb', { tmdbId: tmdbResult.tmdbId });
+
+    return tvShowDAO.findOrCreate({
+      tmdbId: tmdbResult.tmdbId,
+      title: tvshowFolderName,
+    });
+  }
+
+  private async getTVShowEpisodeFilePaths(tvshowFolderName: string) {
+    const tvShowsRoot = `/usr/library/${LIBRARY_CONFIG.tvShowsFolderName}`;
+    const tvShowPath = path.join(tvShowsRoot, tvshowFolderName);
+    const seasonFolders = await fs.readdir(tvShowPath, { withFileTypes: true });
+
+    return mapSeries(
+      seasonFolders
+        .filter((seasonFolder) => seasonFolder.isDirectory())
+        .map((seasonFolder) => seasonFolder.name),
+      async (seasonFolderName) => {
+        const seasonPath = path.join(tvShowPath, seasonFolderName);
+        const entries = await fs.readdir(seasonPath, { withFileTypes: true });
+
+        return entries
+          .filter((entry) => entry.isFile() || entry.isSymbolicLink())
+          .map((entry) => path.join(seasonPath, entry.name));
       }
+    ).then(flatten);
+  }
 
-      this.logger.info('tvshow found on tmdb', { tmdbId: tmdbResult.tmdbId });
+  private async reconcileTVEpisodeFile({
+    episodePath,
+    tvShow,
+    manager,
+  }: {
+    episodePath: string;
+    tvShow: TVShow;
+    manager: EntityManager;
+  }): Promise<TVShowScanSummary> {
+    const summary = createEmptyTVShowScanSummary();
 
-      tvShow = await tvShowDAO.findOrCreate({
-        tmdbId: tmdbResult.tmdbId,
-        title: tvshow,
+    if (!isAllowedVideoFile(episodePath)) {
+      return { ...summary, nonVideoFilesSkipped: 1 };
+    }
+
+    this.logger.info('start processing episode', {
+      episode: path.basename(episodePath),
+    });
+
+    const parsedEpisode = parseEpisodeFile(episodePath);
+
+    if (!parsedEpisode) {
+      this.logger.warn('could not confidently parse episode filename', {
+        episodePath,
+      });
+      return { ...summary, filesScanned: 1, ambiguousFilesSkipped: 1 };
+    }
+
+    this.logger.info('found season number and episode', parsedEpisode);
+
+    const season = await this.findOrCreateDownloadedSeason({
+      tvShow,
+      seasonNumber: parsedEpisode.seasonNumber,
+      manager,
+    });
+
+    const episode = await manager
+      .getCustomRepository(TVEpisodeDAO)
+      .findOrCreate({
+        tvShowId: tvShow.id,
+        seasonId: season.id,
+        episodeNumber: parsedEpisode.episodeNumber,
+        seasonNumber: parsedEpisode.seasonNumber,
+      });
+    const didImportEpisode =
+      episode.state !== DownloadableMediaState.PROCESSED &&
+      episode.state !== DownloadableMediaState.DOWNLOADED;
+
+    await manager.getCustomRepository(TVEpisodeDAO).save({
+      id: episode.id,
+      state: DownloadableMediaState.PROCESSED,
+      monitored: episode.monitored,
+      season,
+    });
+
+    const fileAssociationResult = await this.reconcileFileAssociation({
+      filePath: episodePath,
+      tvEpisodeId: episode.id,
+      manager,
+    });
+
+    return {
+      ...summary,
+      filesScanned: 1,
+      episodesImported: didImportEpisode ? 1 : 0,
+      associationsCreated: fileAssociationResult === 'created' ? 1 : 0,
+      associationsRepaired: fileAssociationResult === 'repaired' ? 1 : 0,
+    };
+  }
+
+  private async findOrCreateDownloadedSeason({
+    tvShow,
+    seasonNumber,
+    manager,
+  }: {
+    tvShow: TVShow;
+    seasonNumber: number;
+    manager: EntityManager;
+  }): Promise<TVSeason> {
+    const tvSeasonDAO = manager.getCustomRepository(TVSeasonDAO);
+    const season = await tvSeasonDAO.findOrCreate(
+      { tvShowId: tvShow.id, seasonNumber },
+      DownloadableMediaState.DOWNLOADED
+    );
+
+    if (
+      season.state === DownloadableMediaState.SEARCHING ||
+      season.state === DownloadableMediaState.DOWNLOADING
+    ) {
+      return tvSeasonDAO.save({
+        id: season.id,
+        state: DownloadableMediaState.DOWNLOADED,
       });
     }
 
-    const root = `/usr/library/${LIBRARY_CONFIG.tvShowsFolderName}`;
-    const episodes = await fs
-      .readdir(path.join(root, tvshow), { withFileTypes: true })
-      .then((seasons) =>
-        mapSeries(
-          seasons
-            .filter((season) => season.isDirectory())
-            .map((season) => season.name),
-          (season) =>
-            fs
-              .readdir(path.join(root, tvshow, season), { withFileTypes: true })
-              .then((entries) =>
-                entries
-                  .filter((f) => f.isFile() || f.isSymbolicLink())
-                  .map((f) => path.join(root, tvshow, season, f.name))
-              )
-        ).then(flatten)
-      );
+    return season;
+  }
 
-    await forEachSeries(episodes, async (episodePath) => {
-      if (
-        // skip non-video files
-        episodePath.endsWith('.srt') ||
-        episodePath.endsWith('.nfo') ||
-        episodePath.startsWith('.')
-      ) {
-        return;
-      }
+  private async reconcileFileAssociation({
+    filePath,
+    tvEpisodeId,
+    manager,
+  }: {
+    filePath: string;
+    tvEpisodeId: number;
+    manager: EntityManager;
+  }): Promise<'created' | 'repaired' | 'unchanged'> {
+    const fileDAO = manager.getCustomRepository(FileDAO);
+    const existingFile = await fileDAO.findOne({ where: { path: filePath } });
 
-      this.logger.info(`start processing episode`, {
-        episode: path.basename(episodePath),
-      });
+    if (!existingFile) {
+      await fileDAO.save({ path: filePath, tvEpisodeId });
+      return 'created';
+    }
 
-      const file = await fileDAO.findOne({ where: { path: episodePath } });
+    if (existingFile.tvEpisodeId === tvEpisodeId) {
+      return 'unchanged';
+    }
 
-      if (file) {
-        this.logger.info(`episode already tracked, skip`);
-        return;
-      }
-
-      const season = path.dirname(episodePath);
-      const [seasonNumber] = /\d+/.exec(season) || [];
-
-      if (!seasonNumber) {
-        this.logger.error('could not parse season number', {
-          season,
-          seasonNumber,
-        });
-        throw new Error('could not parse season number');
-      }
-
-      // parse episode number from title
-      const [, episodeNumber] = /E(\d+)/.exec(episodePath) || [];
-
-      this.logger.info(`found season number and episode`, {
-        seasonNumber,
-        episodeNumber,
-      });
-
-      const tvSeason = await tvSeasonDAO.findOrCreate(
-        {
-          tvShowId: tvShow!.id,
-          seasonNumber: parseInt(seasonNumber, 10),
-        },
-        DownloadableMediaState.PROCESSED
-      );
-
-      const episode = await tvEpisodeDAO.findOrCreate({
-        tvShowId: tvShow!.id,
-        seasonId: tvSeason.id,
-        episodeNumber: parseInt(episodeNumber, 10),
-        seasonNumber: parseInt(seasonNumber, 10),
-      });
-
-      await tvEpisodeDAO.save({
-        id: episode.id,
-        state: DownloadableMediaState.PROCESSED,
-        season: tvSeason,
-      });
-
-      await fileDAO.save({
-        path: episodePath,
-        tvEpisodeId: episode.id,
-      });
+    await fileDAO.save({
+      id: existingFile.id,
+      tvEpisodeId,
+      movieId: null,
     });
-
-    this.logger.info('finish processing tvshow', { tvshow });
+    return 'repaired';
   }
 }

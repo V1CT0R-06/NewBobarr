@@ -34,6 +34,19 @@ import { LibraryService } from 'src/modules/library/library.service';
 import { ParamsService } from 'src/modules/params/params.service';
 import { FileDAO } from 'src/entities/dao/file.dao';
 
+export function buildTVEpisodeFileRecord({
+  tvEpisodeId,
+  filePath,
+}: {
+  tvEpisodeId: number;
+  filePath: string;
+}) {
+  return {
+    tvEpisodeId,
+    path: filePath,
+  };
+}
+
 @Processor(JobsQueue.RENAME_AND_LINK)
 export class OrganizeProcessor {
   public constructor(
@@ -233,8 +246,10 @@ export class OrganizeProcessor {
       );
 
       await fileDAO.save({
-        episodeId,
-        path: path.join(seasonFolder, torrentFile.next),
+        ...buildTVEpisodeFileRecord({
+          tvEpisodeId: episodeId,
+          filePath: path.join(seasonFolder, torrentFile.next),
+        }),
       });
     });
 
@@ -365,8 +380,10 @@ export class OrganizeProcessor {
 
       if (episode) {
         await fileDAO.save({
-          episodeId: episode.id,
-          path: `${path.join(seasonFolder, newName)}.${file.ext}`,
+          ...buildTVEpisodeFileRecord({
+            tvEpisodeId: episode.id,
+            filePath: path.join(seasonFolder, `${newName}${file.ext}`),
+          }),
         });
       }
     });
