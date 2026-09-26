@@ -1,6 +1,8 @@
 import assert from 'assert';
 
 import { buildTVEpisodeFileRecord } from '../src/modules/jobs/processors/organize.processor';
+import { shouldContinueAutomaticMovieDownload } from '../src/modules/jobs/processors/download.processor';
+import { DownloadableMediaState } from '../src/app.dto';
 import {
   normalizeMediaTitle,
   parseEpisodeFile,
@@ -24,6 +26,31 @@ function testOrganizerCreatesTVEpisodeFileRecord() {
 }
 
 testOrganizerCreatesTVEpisodeFileRecord();
+
+function testAutomaticMovieDownloadOnlyContinuesForSearchingMovies() {
+  assert.strictEqual(
+    shouldContinueAutomaticMovieDownload({
+      state: DownloadableMediaState.SEARCHING,
+    }),
+    true
+  );
+  assert.strictEqual(
+    shouldContinueAutomaticMovieDownload({
+      state: DownloadableMediaState.DOWNLOADING,
+    }),
+    false,
+    'automatic movie search must not overwrite a manual active download'
+  );
+  assert.strictEqual(
+    shouldContinueAutomaticMovieDownload({
+      state: DownloadableMediaState.MISSING,
+    }),
+    false
+  );
+  assert.strictEqual(shouldContinueAutomaticMovieDownload(null), false);
+}
+
+testAutomaticMovieDownloadOnlyContinuesForSearchingMovies();
 
 function testEpisodeFilenameParsing() {
   assert.deepStrictEqual(

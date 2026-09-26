@@ -17,6 +17,13 @@ import { TVEpisodeDAO } from 'src/entities/dao/tvepisode.dao';
 
 import { JackettService } from 'src/modules/jackett/jackett.service';
 import { LibraryService } from 'src/modules/library/library.service';
+import { Movie } from 'src/entities/movie.entity';
+
+export function shouldContinueAutomaticMovieDownload(
+  movie?: Pick<Movie, 'state'> | null
+) {
+  return movie?.state === DownloadableMediaState.SEARCHING;
+}
 
 @Processor(JobsQueue.DOWNLOAD)
 export class DownloadProcessor {
@@ -65,7 +72,31 @@ export class DownloadProcessor {
     this.logger.info('start download movie', { movieId });
 
     if (!(await this.canRun({ movieId }))) return;
+
+    if (
+      !shouldContinueAutomaticMovieDownload(
+        await this.movieDAO.findOne(movieId)
+      )
+    ) {
+      this.logger.info(
+        'movie is no longer searching, skip automatic download',
+        {
+          movieId,
+        }
+      );
+      return;
+    }
+
     const [bestResult] = await this.jackettService.searchMovie(movieId);
+    const currentMovie = await this.movieDAO.findOne(movieId);
+
+    if (!shouldContinueAutomaticMovieDownload(currentMovie)) {
+      this.logger.info('movie state changed while searching, skip download', {
+        movieId,
+        state: currentMovie?.state,
+      });
+      return;
+    }
 
     if (bestResult === undefined) {
       this.logger.error('movie torrent not found');
