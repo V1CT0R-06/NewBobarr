@@ -4,6 +4,7 @@ export const TMDBCardStyles = styled.div`
   flex-shrink: 0;
   position: relative;
   width: 220px;
+  color: ${({ theme }) => theme.colors.text};
 
   .poster--container {
     border-radius: 12px;
@@ -24,12 +25,14 @@ export const TMDBCardStyles = styled.div`
     }
 
     .poster {
-      background: #fecea8;
+      background: ${({ theme }) => theme.colors.surfaceElevated};
+      background-position: center;
+      background-size: cover;
     }
 
     .overlay {
       display: flex;
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(15, 23, 42, 0.82);
       align-items: center;
       justify-content: center;
       flex-direction: column;
@@ -65,7 +68,7 @@ export const TMDBCardStyles = styled.div`
     text-transform: lowercase;
     font-size: 0.8em;
     font-weight: 300;
-    color: rgba(0, 0, 0, 0.5);
+    color: ${({ theme }) => theme.colors.mutedText};
   }
 
   .vote--container {

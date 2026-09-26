@@ -1,5 +1,11 @@
 import React from 'react';
-import Document, { DocumentContext } from 'next/document';
+import Document, {
+  DocumentContext,
+  Head,
+  Html,
+  Main,
+  NextScript,
+} from 'next/document';
 import { ServerStyleSheet } from 'styled-components';
 import { resetServerContext } from 'react-beautiful-dnd';
 
@@ -31,5 +37,30 @@ export default class MyDocument extends Document {
     } finally {
       sheet.seal();
     }
+  }
+
+  public render() {
+    return (
+      <Html>
+        <Head />
+        <body>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function () {
+                  try {
+                    var theme = localStorage.getItem('bobarr-theme') || 'dark';
+                    document.documentElement.dataset.theme = theme;
+                    document.documentElement.style.background = theme === 'light' ? '#f4f7fb' : '#111827';
+                  } catch (error) {}
+                })();
+              `,
+            }}
+          />
+          <Main />
+          <NextScript />
+        </body>
+      </Html>
+    );
   }
 }

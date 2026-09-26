@@ -25,6 +25,44 @@ interface TVSeasonDetailsProps {
   tvShowTitle: string;
 }
 
+function getEpisodeStatus(row: EnrichedTvEpisode) {
+  if (
+    !row.monitored &&
+    [
+      DownloadableMediaState.Missing,
+      DownloadableMediaState.Searching,
+      DownloadableMediaState.Downloading,
+    ].includes(row.state)
+  ) {
+    return { color: 'default', label: 'Not monitored' };
+  }
+
+  if (
+    row.state === DownloadableMediaState.Processed ||
+    row.state === DownloadableMediaState.Downloaded
+  ) {
+    return { color: 'geekblue', label: 'Downloaded' };
+  }
+
+  if (row.state === DownloadableMediaState.Searching) {
+    return { color: 'purple', label: 'Searching' };
+  }
+
+  if (row.state === DownloadableMediaState.Downloading) {
+    return { color: 'blue', label: 'Downloading' };
+  }
+
+  return { color: undefined, label: 'Missing' };
+}
+
+function canToggleEpisodeMonitoring(row: EnrichedTvEpisode) {
+  return [
+    DownloadableMediaState.Missing,
+    DownloadableMediaState.Searching,
+    DownloadableMediaState.Downloading,
+  ].includes(row.state);
+}
+
 export function TVSeasonDetailsComponent({
   tvShowTMDBId,
   season,
@@ -92,29 +130,7 @@ export function TVSeasonDetailsComponent({
       title: 'Status',
       align: 'right',
       render: (row: EnrichedTvEpisode) => {
-        let color: string | undefined = undefined;
-        let label = 'Missing';
-
-        if (!row.monitored && row.state === DownloadableMediaState.Missing) {
-          color = 'default';
-          label = 'Unmonitored';
-        }
-
-        if (
-          row.state === DownloadableMediaState.Processed ||
-          row.state === DownloadableMediaState.Downloaded
-        ) {
-          color = 'geekblue';
-          label = 'Downloaded';
-        }
-
-        if (
-          row.state === DownloadableMediaState.Searching ||
-          row.state === DownloadableMediaState.Downloading
-        ) {
-          color = 'blue';
-          label = row.monitored ? 'Downloading' : 'Unmonitored';
-        }
+        const { color, label } = getEpisodeStatus(row);
 
         return (
           <Tag color={color} style={{ width: 110, textAlign: 'center' }}>
@@ -129,11 +145,7 @@ export function TVSeasonDetailsComponent({
       width: 100,
       render: (row: EnrichedTvEpisode) => {
         const inLibrary = row.state !== DownloadableMediaState.Missing;
-        const canToggleMonitoring = [
-          DownloadableMediaState.Missing,
-          DownloadableMediaState.Searching,
-          DownloadableMediaState.Downloading,
-        ].includes(row.state);
+        const canToggleMonitoring = canToggleEpisodeMonitoring(row);
 
         return (
           <>

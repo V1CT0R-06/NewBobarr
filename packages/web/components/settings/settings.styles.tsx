@@ -1,20 +1,37 @@
 import styled from 'styled-components';
 
 export const SettingsComponentStyles = styled.div`
-  padding-top: 48px;
+  padding-top: 32px;
 
   .wrapper {
     max-width: 1200px;
     margin: 0 auto;
   }
 
+  h1 {
+    font-size: 1.8em;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+
+  h2 {
+    color: ${({ theme }) => theme.colors.mutedText};
+    font-size: 0.9em;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin: 20px 0 8px;
+    text-transform: uppercase;
+  }
+
   .flex {
     display: flex;
-    justify-content: space-evenly;
+    gap: 24px;
+    justify-content: space-between;
   }
 
   .row {
-    width: 500px;
+    flex: 1;
+    min-width: 0;
   }
 
   .actions {
