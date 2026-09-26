@@ -132,6 +132,11 @@ JACKETT_MANUAL_SEARCH_TIMEOUT=15000
 LIBRARY_MOVIES_FOLDER_NAME=movies
 LIBRARY_TV_SHOWS_FOLDER_NAME=tvshows
 DEBUG_REDIS=false
+API_PORT=4000
+WEB_PORT=3000
+JACKETT_PORT=9117
+FLARESOLVERR_PORT=8191
+TRANSMISSION_WEB_PORT=9091
 ```
 
 Find your user and group IDs with:
@@ -139,6 +144,9 @@ Find your user and group IDs with:
 ```bash
 id $(whoami)
 ```
+
+If a port is already used on your host, change the matching `*_PORT` value
+before running `docker compose up -d --build`.
 
 ## Existing media library
 
