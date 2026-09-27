@@ -41,7 +41,6 @@ export function ManualSearchComponent(props: ManualSearchProps) {
   });
 
   const [downloadOwnTorrent] = useDownloadOwnTorrentMutation({
-    awaitRefetchQueries: true,
     refetchQueries: [
       { query: GetLibraryTvShowsDocument },
       { query: GetDownloadingDocument },
@@ -56,7 +55,7 @@ export function ManualSearchComponent(props: ManualSearchProps) {
     onCompleted: () => {
       handleClose();
       notification.success({
-        message: 'Download episode started',
+        message: 'Download started',
         placement: 'bottomRight',
       });
     },
@@ -166,6 +165,7 @@ export function ManualSearchComponent(props: ManualSearchProps) {
           <JackettResultsTable
             media={props.media}
             results={data?.results || []}
+            onDownloadStarted={handleClose}
             refetchQueries={props.refetchQueries}
           />
         </Skeleton>

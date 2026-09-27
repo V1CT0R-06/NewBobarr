@@ -39,6 +39,26 @@ import { ParamsService } from 'src/modules/params/params.service';
 
 import { JackettInput } from './library.dto';
 import { FileDAO } from 'src/entities/dao/file.dao';
+import { Torrent } from 'src/entities/torrent.entity';
+
+export function shouldKeepExistingActiveDownload({
+  state,
+  transmissionTorrentExists,
+}: {
+  state: DownloadableMediaState;
+  transmissionTorrentExists: boolean;
+}) {
+  return (
+    state === DownloadableMediaState.DOWNLOADING && transmissionTorrentExists
+  );
+}
+
+export function buildTVEpisodeWithoutTMDBMetadata(tvEpisode: TVEpisode) {
+  return {
+    ...tvEpisode,
+    releaseDate: undefined,
+  };
+}
 
 @Injectable()
 export class LibraryService {
@@ -393,6 +413,24 @@ export class LibraryService {
 
     const movieDAO = manager!.getCustomRepository(MovieDAO);
     const movie = await movieDAO.findOneOrFail(movieId);
+    const activeTorrent = await this.findActiveTorrentRecord({
+      manager: manager!,
+      resourceId: movieId,
+      resourceType: FileType.MOVIE,
+    });
+
+    if (
+      shouldKeepExistingActiveDownload({
+        state: movie.state,
+        transmissionTorrentExists: Boolean(activeTorrent),
+      })
+    ) {
+      this.logger.info('movie download already active', {
+        movieId,
+        torrentId: activeTorrent?.id,
+      });
+      return;
+    }
 
     if (movie.state !== DownloadableMediaState.MISSING) {
       await this.removeMovie(
@@ -442,6 +480,27 @@ export class LibraryService {
       }
     );
 
+    const tvSeasonDAO = manager!.getCustomRepository(TVSeasonDAO);
+    const season = await tvSeasonDAO.findOneOrFail(seasonId);
+    const activeTorrent = await this.findActiveTorrentRecord({
+      manager: manager!,
+      resourceId: seasonId,
+      resourceType: FileType.SEASON,
+    });
+
+    if (
+      shouldKeepExistingActiveDownload({
+        state: season.state,
+        transmissionTorrentExists: Boolean(activeTorrent),
+      })
+    ) {
+      this.logger.info('tv season download already active', {
+        seasonId,
+        torrentId: activeTorrent?.id,
+      });
+      return;
+    }
+
     await this.replaceSeason(seasonId, manager!);
 
     const torrent = await this.transmissionService.addTorrent(
@@ -477,6 +536,27 @@ export class LibraryService {
       id: episodeId,
       monitored: true,
     });
+
+    const tvEpisodeDAO = manager!.getCustomRepository(TVEpisodeDAO);
+    const episode = await tvEpisodeDAO.findOneOrFail(episodeId);
+    const activeTorrent = await this.findActiveTorrentRecord({
+      manager: manager!,
+      resourceId: episodeId,
+      resourceType: FileType.EPISODE,
+    });
+
+    if (
+      shouldKeepExistingActiveDownload({
+        state: episode.state,
+        transmissionTorrentExists: Boolean(activeTorrent),
+      })
+    ) {
+      this.logger.info('tv episode download already active', {
+        episodeId,
+        torrentId: activeTorrent?.id,
+      });
+      return;
+    }
 
     await this.replaceTVEpisode(episodeId, manager!);
 
@@ -819,6 +899,32 @@ export class LibraryService {
     });
   }
 
+  private async findActiveTorrentRecord({
+    manager,
+    resourceId,
+    resourceType,
+  }: {
+    manager: EntityManager;
+    resourceId: number;
+    resourceType: FileType;
+  }): Promise<Torrent | null> {
+    const torrentDAO = manager.getCustomRepository(TorrentDAO);
+    const torrent = await torrentDAO.findOne({
+      resourceId,
+      resourceType,
+    });
+
+    if (!torrent) {
+      return null;
+    }
+
+    const transmissionTorrent = await this.transmissionService
+      .getTorrent(torrent.torrentHash)
+      .catch(() => null);
+
+    return transmissionTorrent ? torrent : null;
+  }
+
   private async replaceMovie(movieId: number, manager: EntityManager) {
     const movieDAO = manager!.getCustomRepository(MovieDAO);
     const torrentDAO = manager!.getCustomRepository(TorrentDAO);
@@ -863,11 +969,31 @@ export class LibraryService {
   };
 
   private enrichTVEpisode = async (tvEpisode: TVEpisode) => {
-    const tmdbResult = await this.tmdbService.getTVEpisode(
-      tvEpisode.tvShow.tmdbId,
-      tvEpisode.seasonNumber,
-      tvEpisode.episodeNumber
-    );
+    const tmdbResult = await this.tmdbService
+      .getTVEpisode(
+        tvEpisode.tvShow.tmdbId,
+        tvEpisode.seasonNumber,
+        tvEpisode.episodeNumber
+      )
+      .catch((error) => {
+        this.logger.warn(
+          'tmdb episode metadata missing, using database episode only',
+          {
+            episodeId: tvEpisode.id,
+            tvShowId: tvEpisode.tvShowId,
+            tmdbId: tvEpisode.tvShow.tmdbId,
+            seasonNumber: tvEpisode.seasonNumber,
+            episodeNumber: tvEpisode.episodeNumber,
+            error: error.message,
+          }
+        );
+
+        return null;
+      });
+
+    if (!tmdbResult) {
+      return buildTVEpisodeWithoutTMDBMetadata(tvEpisode);
+    }
 
     return {
       ...tvEpisode,

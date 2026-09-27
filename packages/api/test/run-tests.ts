@@ -8,6 +8,10 @@ import {
 } from '../src/modules/jobs/processors/refresh-torrent.processor';
 import { DownloadableMediaState } from '../src/app.dto';
 import {
+  buildTVEpisodeWithoutTMDBMetadata,
+  shouldKeepExistingActiveDownload,
+} from '../src/modules/library/library.service';
+import {
   isPathInsideHiddenLibraryFolder,
   isPathInsideLibraryRoot,
   isVisibleLibraryFolderName,
@@ -96,6 +100,58 @@ function testInactiveMissingTorrentRowsAreSafeToRemove() {
 }
 
 testInactiveMissingTorrentRowsAreSafeToRemove();
+
+function testManualDownloadRetryKeepsActiveTorrent() {
+  assert.strictEqual(
+    shouldKeepExistingActiveDownload({
+      state: DownloadableMediaState.DOWNLOADING,
+      transmissionTorrentExists: true,
+    }),
+    true,
+    'manual retries must not remove/re-add an already active Transmission torrent'
+  );
+  assert.strictEqual(
+    shouldKeepExistingActiveDownload({
+      state: DownloadableMediaState.DOWNLOADING,
+      transmissionTorrentExists: false,
+    }),
+    false,
+    'Bobarr may repair a downloading state when the Transmission torrent is missing'
+  );
+  assert.strictEqual(
+    shouldKeepExistingActiveDownload({
+      state: DownloadableMediaState.MISSING,
+      transmissionTorrentExists: true,
+    }),
+    false,
+    'a missing resource with a stale torrent row is not an accepted active download'
+  );
+}
+
+testManualDownloadRetryKeepsActiveTorrent();
+
+function testMissingTMDBEpisodeMetadataDoesNotBreakEpisode() {
+  const episode = {
+    id: 4525,
+    seasonNumber: 5,
+    episodeNumber: 5,
+    state: DownloadableMediaState.MISSING,
+    monitored: true,
+  } as any;
+
+  const fallback = buildTVEpisodeWithoutTMDBMetadata(episode);
+
+  assert.strictEqual(fallback.id, episode.id);
+  assert.strictEqual(fallback.seasonNumber, 5);
+  assert.strictEqual(fallback.episodeNumber, 5);
+  assert.strictEqual(
+    fallback.releaseDate,
+    undefined,
+    'a missing TMDB episode should not crash GraphQL enrichment'
+  );
+}
+
+testMissingTMDBEpisodeMetadataDoesNotBreakEpisode();
 
 function testEpisodeFilenameParsing() {
   assert.deepStrictEqual(

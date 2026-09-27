@@ -25,10 +25,12 @@ interface JackettResultTableProps {
   refetchQueries?: PureQueryOptions[];
   results: JackettFormattedResult[];
   media: Media;
+  onDownloadStarted?: () => void;
 }
 
 export function JackettResultsTable({
   media,
+  onDownloadStarted,
   refetchQueries,
   results,
 }: JackettResultTableProps) {
@@ -85,6 +87,7 @@ export function JackettResultsTable({
         <ManualDownloadMedia
           jackettResult={row}
           media={media}
+          onDownloadStarted={onDownloadStarted}
           refetchQueries={refetchQueries || []}
         />
       ),
@@ -104,12 +107,19 @@ export function JackettResultsTable({
 function ManualDownloadMedia({
   media,
   jackettResult,
+  onDownloadStarted,
   refetchQueries,
 }: {
   media: Media;
   jackettResult: JackettFormattedResult;
+  onDownloadStarted?: () => void;
   refetchQueries: PureQueryOptions[];
 }) {
+  const [activeDownloadId, setActiveDownloadId] = React.useState<string | null>(
+    null
+  );
+  const isDownloadInFlight = React.useRef(false);
+
   const jackettInput = pick(jackettResult, [
     'title',
     'downloadLink',
@@ -118,69 +128,91 @@ function ManualDownloadMedia({
   ]);
 
   const [downloadMovie, { loading: loading1 }] = useDownloadMovieMutation({
-    awaitRefetchQueries: true,
     refetchQueries: [
       { query: GetLibraryMoviesDocument },
       { query: GetDownloadingDocument },
       { query: GetMissingDocument },
       ...refetchQueries,
     ],
-    onError: ({ message }) =>
+    onError: ({ message }) => {
+      isDownloadInFlight.current = false;
+      setActiveDownloadId(null);
       notification.error({
         message: message.replace('GraphQL error: ', ''),
         placement: 'bottomRight',
-      }),
-    onCompleted: () =>
+      });
+    },
+    onCompleted: () => {
+      onDownloadStarted?.();
       notification.success({
-        message: 'Download movie started',
+        message: 'Download started',
         placement: 'bottomRight',
-      }),
+      });
+    },
   });
 
   const [
     downloadTVEpisode,
     { loading: loading2 },
   ] = useDownloadTvEpisodeMutation({
-    awaitRefetchQueries: true,
     refetchQueries: [
       { query: GetLibraryTvShowsDocument },
       { query: GetDownloadingDocument },
       { query: GetMissingDocument },
       ...refetchQueries,
     ],
-    onError: ({ message }) =>
+    onError: ({ message }) => {
+      isDownloadInFlight.current = false;
+      setActiveDownloadId(null);
       notification.error({
         message: message.replace('GraphQL error: ', ''),
         placement: 'bottomRight',
-      }),
-    onCompleted: () =>
+      });
+    },
+    onCompleted: () => {
+      onDownloadStarted?.();
       notification.success({
-        message: 'Download episode started',
+        message: 'Download started',
         placement: 'bottomRight',
-      }),
+      });
+    },
   });
 
   const [downloadTVSeason, { loading: loading3 }] = useDownloadSeasonMutation({
-    awaitRefetchQueries: true,
     refetchQueries: [
       { query: GetLibraryTvShowsDocument },
       { query: GetDownloadingDocument },
       { query: GetMissingDocument },
       ...refetchQueries,
     ],
-    onError: ({ message }) =>
+    onError: ({ message }) => {
+      isDownloadInFlight.current = false;
+      setActiveDownloadId(null);
       notification.error({
         message: message.replace('GraphQL error: ', ''),
         placement: 'bottomRight',
-      }),
-    onCompleted: () =>
+      });
+    },
+    onCompleted: () => {
+      onDownloadStarted?.();
       notification.success({
-        message: 'Download episode started',
+        message: 'Download started',
         placement: 'bottomRight',
-      }),
+      });
+    },
   });
 
+  const isDownloading =
+    Boolean(activeDownloadId) || loading1 || loading2 || loading3;
+
   const handleClick = () => {
+    if (isDownloadInFlight.current || isDownloading) {
+      return;
+    }
+
+    isDownloadInFlight.current = true;
+    setActiveDownloadId(jackettResult.id);
+
     if (media.__typename === 'EnrichedMovie') {
       downloadMovie({
         variables: {
@@ -188,6 +220,7 @@ function ManualDownloadMedia({
           jackettResult: jackettInput,
         },
       });
+      return;
     }
 
     if (media.__typename === 'EnrichedTVEpisode') {
@@ -197,6 +230,7 @@ function ManualDownloadMedia({
           jackettResult: jackettInput,
         },
       });
+      return;
     }
 
     if (media.__typename === 'TMDBFormattedTVSeason') {
@@ -207,10 +241,14 @@ function ManualDownloadMedia({
           jackettResult: jackettInput,
         },
       });
+      return;
     }
+
+    isDownloadInFlight.current = false;
+    setActiveDownloadId(null);
   };
 
-  return loading1 || loading2 || loading3 ? (
+  return isDownloading ? (
     <LoadingOutlined />
   ) : (
     <Popover content={jackettResult.link}>
