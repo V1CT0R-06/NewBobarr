@@ -6,7 +6,7 @@ import { Processor, Process, InjectQueue } from '@nestjs/bull';
 import { Inject } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
-import { times, orderBy, flatten } from 'lodash';
+import { orderBy, flatten } from 'lodash';
 import { Job, Queue } from 'bull';
 
 import { Transaction, TransactionManager, EntityManager } from 'typeorm';
@@ -39,6 +39,7 @@ import {
   normalizeMediaTitle,
   parseEpisodeFile,
 } from 'src/modules/library/reconciliation.helpers';
+import { getVerifiedTMDBEpisodeNumbers } from 'src/modules/library/tmdb-episode.helpers';
 
 import { MovieDAO } from 'src/entities/dao/movie.dao';
 import { TVShowDAO } from 'src/entities/dao/tvshow.dao';
@@ -119,30 +120,38 @@ export class ScanLibraryProcessor {
     this.logger.info(`found ${tvShowLastEpisodeTracked.length} seasons`);
 
     await forEachSeries(tvShowLastEpisodeTracked, async (episode) => {
-      const tmdbResult = await this.tmdbService
-        .getTVShowSeasons(episode.tvShow.tmdbId)
-        .then((seasons) =>
-          seasons.find((season) => season.seasonNumber === episode.seasonNumber)
-        );
+      const tmdbSeason = await this.tmdbService
+        .getTVSeasonDetails(episode.tvShow.tmdbId, episode.seasonNumber)
+        .catch((error) => {
+          this.logger.warn('did not find tmdb season details', {
+            tvShow: episode.tvShow.title,
+            tmdbId: episode.tvShow.tmdbId,
+            seasonNumber: episode.seasonNumber,
+            error: error.message,
+          });
 
-      if (!tmdbResult) {
-        this.logger.info('did not find tmdb season', { episode });
-        throw new Error('did not find tmdb season');
+          return null;
+        });
+
+      if (!tmdbSeason) {
+        return;
       }
 
-      const newEpisodesCount = tmdbResult.episodeCount - episode.episodeNumber;
+      const newEpisodeNumbers = getVerifiedTMDBEpisodeNumbers(
+        tmdbSeason.episodes
+      ).filter((episodeNumber) => episodeNumber > episode.episodeNumber);
 
-      this.logger.info(`found ${newEpisodesCount} new episodes`, {
+      this.logger.info(`found ${newEpisodeNumbers.length} new episodes`, {
         tvShow: episode.tvShow.title,
         seasonNumber: episode.seasonNumber,
       });
 
-      if (newEpisodesCount > 0) {
+      if (newEpisodeNumbers.length > 0) {
         const newEpisodes = await this.tvEpisodeDAO.save(
-          times(newEpisodesCount, (index) => ({
+          newEpisodeNumbers.map((episodeNumber) => ({
             tvShow: episode.tvShow,
             season: episode.season,
-            episodeNumber: episode.episodeNumber + index + 1,
+            episodeNumber,
             seasonNumber: episode.seasonNumber,
           }))
         );
@@ -520,6 +529,30 @@ export class ScanLibraryProcessor {
     }
 
     this.logger.info('found season number and episode', parsedEpisode);
+
+    const tmdbEpisodeExists = await this.tmdbService
+      .getTVEpisode(
+        tvShow.tmdbId,
+        parsedEpisode.seasonNumber,
+        parsedEpisode.episodeNumber
+      )
+      .then(() => true)
+      .catch((error) => {
+        this.logger.warn('skipping file with no matching tmdb episode', {
+          episodePath,
+          tvShow: tvShow.title,
+          tmdbId: tvShow.tmdbId,
+          seasonNumber: parsedEpisode.seasonNumber,
+          episodeNumber: parsedEpisode.episodeNumber,
+          error: error.message,
+        });
+
+        return false;
+      });
+
+    if (!tmdbEpisodeExists) {
+      return { ...summary, filesScanned: 1, ambiguousFilesSkipped: 1 };
+    }
 
     const season = await this.findOrCreateDownloadedSeason({
       tvShow,

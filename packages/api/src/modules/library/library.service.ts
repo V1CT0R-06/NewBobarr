@@ -1,6 +1,6 @@
 import { Injectable, HttpException, HttpStatus, Inject } from '@nestjs/common';
 import { map, forEachSeries, forEach, reduce, mapSeries } from 'p-iteration';
-import { flatten, times, uniq } from 'lodash';
+import { flatten, uniq } from 'lodash';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import childCommand from 'child-command';
@@ -38,6 +38,7 @@ import { TransmissionService } from 'src/modules/transmission/transmission.servi
 import { ParamsService } from 'src/modules/params/params.service';
 
 import { JackettInput } from './library.dto';
+import { getVerifiedTMDBEpisodeNumbers } from './tmdb-episode.helpers';
 import { FileDAO } from 'src/entities/dao/file.dao';
 import { Torrent } from 'src/entities/torrent.entity';
 
@@ -633,11 +634,26 @@ export class LibraryService {
           );
         }
 
-        const alreadExists = await tvSeasonDAO.findOne({
+        const alreadyExists = await tvSeasonDAO.findOne({
           where: { tvShow, seasonNumber },
         });
 
-        if (!alreadExists) {
+        if (!alreadyExists) {
+          const tmdbSeasonDetails = await this.tmdbService.getTVSeasonDetails(
+            tmdbId,
+            seasonNumber
+          );
+          const verifiedEpisodeNumbers = getVerifiedTMDBEpisodeNumbers(
+            tmdbSeasonDetails.episodes
+          );
+
+          if (verifiedEpisodeNumbers.length === 0) {
+            throw new HttpException(
+              `Season number ${seasonNumber} has no confirmed TMDB episodes`,
+              HttpStatus.UNPROCESSABLE_ENTITY
+            );
+          }
+
           const season = await tvSeasonDAO.save({
             tvShow,
             seasonNumber,
@@ -648,11 +664,11 @@ export class LibraryService {
           });
 
           await tvEpisodeDAO.save(
-            times(tmdbSeason.episode_count, (episodeNumber) => ({
+            verifiedEpisodeNumbers.map((episodeNumber) => ({
               tvShow,
               season,
               seasonNumber,
-              episodeNumber: episodeNumber + 1,
+              episodeNumber,
             }))
           );
 

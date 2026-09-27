@@ -104,6 +104,16 @@ export interface TMDBTVEpisode {
   vote_count: number;
 }
 
+export interface TMDBTVSeasonDetails {
+  id: number;
+  air_date: string | null;
+  episodes: TMDBTVEpisode[];
+  name: string;
+  overview: string;
+  poster_path: string | null;
+  season_number: number;
+}
+
 export interface TMDBLanguage {
   iso_639_1: string;
   english_name: string;
