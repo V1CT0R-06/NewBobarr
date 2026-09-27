@@ -15,13 +15,17 @@ export function CalendarComponent() {
         {error && (
           <Alert
             type="error"
-            message={<pre>{JSON.stringify(error, null, 4)}</pre>}
+            message="Some calendar information could not be loaded."
+            description="Please retry in a moment. Detailed error information is available in the Bobarr API logs."
+            showIcon={true}
           />
         )}
         {loading && (
           <Alert
             type="info"
-            message="Dont't worry it might take some time on first load"
+            message="Loading calendar"
+            description="Don't worry, it might take some time on first load."
+            showIcon={true}
           />
         )}
         <Skeleton active={true} loading={loading}>
@@ -36,15 +40,17 @@ export function CalendarComponent() {
 
               const tvEpisodes =
                 data?.calendar?.tvEpisodes.filter(
-                  (tvEpisode) => formattedDate === tvEpisode.releaseDate
+                  (tvEpisode) =>
+                    tvEpisode.releaseDate &&
+                    formattedDate === tvEpisode.releaseDate
                 ) || [];
 
               return (
-                <div>
+                <div className="calendar-events">
                   {[...movies, ...tvEpisodes].map((media) => (
                     <Tag
                       key={(media.__typename || '') + media.id}
-                      style={{ fontSize: '0.75em' }}
+                      className="calendar-event"
                     >
                       {media.__typename === 'EnrichedMovie' && media.title}
                       {media.__typename === 'EnrichedTVEpisode' &&

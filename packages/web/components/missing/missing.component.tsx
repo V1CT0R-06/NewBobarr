@@ -34,7 +34,10 @@ export function MissingComponent() {
 
   if (rows.length > 0) {
     const withDate = orderBy(
-      rows.map((row) => ({ ...row, date: dayjs(row.releaseDate) })),
+      rows.map((row) => ({
+        ...row,
+        date: row.releaseDate ? dayjs(row.releaseDate) : dayjs(0),
+      })),
       ['date'],
       ['asc']
     );

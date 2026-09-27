@@ -124,7 +124,8 @@ export function TVSeasonDetailsComponent({
     },
     {
       title: 'Air date',
-      render: (row: EnrichedTvEpisode) => availableIn(dayjs(row.releaseDate)),
+      render: (row: EnrichedTvEpisode) =>
+        row.releaseDate ? availableIn(dayjs(row.releaseDate)) : 'Unknown',
     },
     {
       title: 'Status',

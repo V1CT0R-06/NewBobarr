@@ -172,7 +172,7 @@ type EnrichedTVEpisode {
   tvShow: TVShow!
   createdAt: DateTime!
   updatedAt: DateTime!
-  releaseDate: String!
+  releaseDate: String
   voteAverage: Float
 }
 

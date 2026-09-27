@@ -202,7 +202,7 @@ export type EnrichedTvEpisode = {
   tvShow: TvShow;
   createdAt: Scalars['DateTime'];
   updatedAt: Scalars['DateTime'];
-  releaseDate: Scalars['String'];
+  releaseDate?: Maybe<Scalars['String']>;
   voteAverage?: Maybe<Scalars['Float']>;
 };
 
