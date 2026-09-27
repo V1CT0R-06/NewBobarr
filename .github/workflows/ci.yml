@@ -38,6 +38,10 @@ jobs:
         working-directory: packages/web
         run: yarn gql-gen
 
+      - name: Web theme tests
+        working-directory: packages/web
+        run: yarn test
+
       - name: Web build
         working-directory: packages/web
         run: yarn build

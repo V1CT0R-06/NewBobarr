@@ -11,9 +11,13 @@ declare module 'styled-components' {
       background: string;
       surface: string;
       surfaceElevated: string;
+      surfaceSecondary: string;
       text: string;
+      textSecondary: string;
       mutedText: string;
       border: string;
+      overlay: string;
+      shadow: string;
       navbarBackground: string;
       buttonBackground: string;
       buttonText: string;

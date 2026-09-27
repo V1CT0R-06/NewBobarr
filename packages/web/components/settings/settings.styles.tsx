@@ -6,6 +6,8 @@ export const SettingsComponentStyles = styled.div`
   .wrapper {
     max-width: 1200px;
     margin: 0 auto;
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   h1 {
@@ -61,6 +63,23 @@ export const SettingsComponentStyles = styled.div`
 
     .save-btn {
       margin-top: 12px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding-top: 20px;
+
+    .flex {
+      display: block;
+    }
+
+    .row {
+      margin-bottom: 20px;
+    }
+
+    .actions .ant-btn,
+    .quality-preference .ant-btn {
+      min-height: 42px;
     }
   }
 `;

@@ -186,6 +186,10 @@ Settings → Actions → Scan / reconcile library
 Reconciliation scans existing media, creates safe missing database records,
 repairs file associations, and skips ambiguous files instead of guessing.
 
+Bobarr ignores dot-prefixed folders such as `.Temporary Show` or `.Movie Name`.
+Those folders are useful for staging, old copies, or disabled media, but they do
+not count as active library media.
+
 Supported TV filename patterns include:
 
 - `S01E01`
@@ -330,6 +334,10 @@ docker compose logs --tail=200 api
 
 Use `Scan / reconcile library`. Make sure TV filenames include a recognizable
 episode pattern such as `S01E01` or `2x05`.
+
+Files in hidden dot-prefixed folders are intentionally skipped. Move media into
+a normal visible movie/show folder before scanning if you want Bobarr to import
+it.
 
 ### Episode keeps searching but I do not want it
 

@@ -45,6 +45,10 @@
 - exclude unmonitored episodes from the global Searching list
 - repair missing/stale File associations during library scans without deleting
   media
+- ignore hidden dot-prefixed library folders during scans so staging/old media
+  does not appear as downloaded
+- return movies/episodes/seasons to missing when their only File rows point to
+  hidden or missing library paths
 - skip ambiguous TV filenames during reconciliation instead of guessing
 - repair generated TV season episode filenames so organized files do not get a
   doubled extension separator

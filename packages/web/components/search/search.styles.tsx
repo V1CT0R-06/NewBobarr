@@ -3,6 +3,8 @@ import styled from 'styled-components';
 export const Wrapper = styled.div`
   max-width: 1200px;
   margin: 0 auto;
+  padding-left: 16px;
+  padding-right: 16px;
 `;
 
 export const SearchStyles = styled.div`
@@ -10,7 +12,8 @@ export const SearchStyles = styled.div`
     &--input {
       border: none;
       border-radius: 20px;
-      color: ${({ theme }) => theme.colors.navbarBackground};
+      background: ${({ theme }) => theme.colors.surface};
+      color: ${({ theme }) => theme.colors.text};
       font-size: 1.2em;
       outline: none;
       padding: 8px 18px;
@@ -66,6 +69,7 @@ export const SearchStyles = styled.div`
     }
 
     &--category {
+      color: ${({ theme }) => theme.colors.text};
       font-weight: 500;
       font-size: 1.3em;
       margin-bottom: 24px;
@@ -87,6 +91,7 @@ export const SearchStyles = styled.div`
       .arrow-right,
       .arrow-left {
         background: transparent;
+        color: ${({ theme }) => theme.colors.text};
         position: absolute;
         outline: none;
         border: none;
@@ -106,6 +111,50 @@ export const SearchStyles = styled.div`
       div {
         outline-width: 0px;
       }
+    }
+  }
+
+  @media (max-width: 700px) {
+    .search-bar {
+      &--container {
+        padding: 20px 0;
+      }
+
+      &--title {
+        font-size: 1.45em;
+      }
+
+      &--subtitle {
+        font-size: 1.05em;
+        margin-bottom: 24px;
+      }
+
+      &--input {
+        font-size: 1em;
+        padding-right: 92px;
+
+        &-submit {
+          font-size: 1em;
+          min-width: 80px;
+          padding-left: 12px;
+          padding-right: 12px;
+        }
+      }
+    }
+
+    .search-results {
+      &--container {
+        margin-top: 28px;
+      }
+
+      &--category {
+        margin-left: 16px;
+      }
+    }
+
+    .carrousel--container {
+      padding-left: 16px;
+      padding-right: 16px;
     }
   }
 `;

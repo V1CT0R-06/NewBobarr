@@ -19,6 +19,24 @@ import { TVEpisodeDAO } from 'src/entities/dao/tvepisode.dao';
 
 import { TransmissionService } from 'src/modules/transmission/transmission.service';
 
+export function stateAfterMissingTransmissionTorrent() {
+  return DownloadableMediaState.MISSING;
+}
+
+export function shouldRemoveInactiveMissingTorrentRow({
+  resourceState,
+  transmissionTorrentExists,
+}: {
+  resourceState?: DownloadableMediaState;
+  transmissionTorrentExists: boolean;
+}) {
+  return (
+    !transmissionTorrentExists &&
+    resourceState !== undefined &&
+    resourceState !== DownloadableMediaState.DOWNLOADING
+  );
+}
+
 @Processor(JobsQueue.REFRESH_TORRENT)
 export class RefreshTorrentProcessor {
   // eslint-disable-next-line max-params
@@ -69,6 +87,8 @@ export class RefreshTorrentProcessor {
       })
     );
 
+    await this.removeInactiveMissingTorrentRows();
+
     this.logger.info('finish refresh torrent status');
   }
 
@@ -81,13 +101,30 @@ export class RefreshTorrentProcessor {
   }) {
     this.logger.info('refresh torrent status', { resourceId, resourceType });
 
-    const torrent = await this.torrentDAO.findOneOrFail({
+    const torrent = await this.torrentDAO.findOne({
       where: { resourceId, resourceType },
     });
+
+    if (!torrent) {
+      await this.markResourceAsMissing({ resourceId, resourceType });
+      return;
+    }
 
     const transmissionTorrent = await this.transmissionService.getTorrent(
       torrent.torrentHash
     );
+
+    if (!transmissionTorrent) {
+      this.logger.warn('torrent row is stale; missing from Transmission', {
+        resourceId,
+        resourceType,
+        torrentHash: torrent.torrentHash,
+      });
+
+      await this.torrentDAO.remove(torrent);
+      await this.markResourceAsMissing({ resourceId, resourceType });
+      return;
+    }
 
     const isComplete = transmissionTorrent?.percentDone === 1;
 
@@ -130,5 +167,83 @@ export class RefreshTorrentProcessor {
         );
       }
     }
+  }
+
+  private async markResourceAsMissing({
+    resourceId,
+    resourceType,
+  }: {
+    resourceId: number;
+    resourceType: FileType;
+  }) {
+    const state = stateAfterMissingTransmissionTorrent();
+
+    if (resourceType === FileType.MOVIE) {
+      await this.movieDAO.save({ id: resourceId, state });
+    }
+
+    if (resourceType === FileType.SEASON) {
+      await this.tvSeasonDAO.save({ id: resourceId, state });
+    }
+
+    if (resourceType === FileType.EPISODE) {
+      await this.tvEpisodeDAO.save({ id: resourceId, state });
+    }
+  }
+
+  private async removeInactiveMissingTorrentRows() {
+    const incompleteTorrentRows = await this.torrentDAO.find({
+      where: { completed: false },
+    });
+
+    await forEachSeries(incompleteTorrentRows, async (torrent) => {
+      const transmissionTorrent = await this.transmissionService.getTorrent(
+        torrent.torrentHash
+      );
+      const resourceState = await this.getResourceState({
+        resourceId: torrent.resourceId,
+        resourceType: torrent.resourceType,
+      });
+
+      if (
+        shouldRemoveInactiveMissingTorrentRow({
+          resourceState,
+          transmissionTorrentExists: Boolean(transmissionTorrent),
+        })
+      ) {
+        this.logger.warn(
+          'removing inactive stale torrent row missing from Transmission',
+          {
+            resourceId: torrent.resourceId,
+            resourceType: torrent.resourceType,
+            resourceState,
+            torrentHash: torrent.torrentHash,
+          }
+        );
+        await this.torrentDAO.remove(torrent);
+      }
+    });
+  }
+
+  private async getResourceState({
+    resourceId,
+    resourceType,
+  }: {
+    resourceId: number;
+    resourceType: FileType;
+  }) {
+    if (resourceType === FileType.MOVIE) {
+      return (await this.movieDAO.findOne(resourceId))?.state;
+    }
+
+    if (resourceType === FileType.SEASON) {
+      return (await this.tvSeasonDAO.findOne(resourceId))?.state;
+    }
+
+    if (resourceType === FileType.EPISODE) {
+      return (await this.tvEpisodeDAO.findOne(resourceId))?.state;
+    }
+
+    return undefined;
   }
 }

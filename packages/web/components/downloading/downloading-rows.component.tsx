@@ -99,9 +99,9 @@ export function DownloadingRowsComponent({
         <div key={row.id} className="download-row">
           <div className="status">
             {row.torrentStatus.isStopped ? (
-              <Tag color="orange">Download paused</Tag>
+              <Tag className="status-tag paused">Download paused</Tag>
             ) : (
-              <Tag color="blue">
+              <Tag className="status-tag downloading">
                 Downloading <LoadingOutlined style={{ marginLeft: 10 }} />
               </Tag>
             )}

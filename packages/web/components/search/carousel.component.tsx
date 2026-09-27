@@ -27,6 +27,7 @@ export function CarouselComponent({
   type: 'movie' | 'tvshow';
 }) {
   const theme = useTheme();
+  const visibleSlides = useResponsiveVisibleSlides();
   const { data: moviesLibrary } = useGetLibraryMoviesQuery();
   const { data: tvShowsLibrary } = useGetLibraryTvShowsQuery();
 
@@ -42,8 +43,8 @@ export function CarouselComponent({
         naturalSlideWidth={220}
         totalSlides={results.length}
         dragEnabled={false}
-        visibleSlides={5}
-        step={5}
+        visibleSlides={visibleSlides}
+        step={visibleSlides}
       >
         <ResetCarouselSlideAndGoBack watch={results} />
         <Slider>
@@ -62,7 +63,7 @@ export function CarouselComponent({
             </Slide>
           ))}
         </Slider>
-        {results.length > 5 && (
+        {results.length > visibleSlides && (
           <ButtonNext className="arrow-right">
             <FaChevronCircleRight size={16} />
           </ButtonNext>
@@ -70,6 +71,38 @@ export function CarouselComponent({
       </CarouselProvider>
     </div>
   );
+}
+
+function useResponsiveVisibleSlides() {
+  const [visibleSlides, setVisibleSlides] = useState(5);
+
+  useEffect(() => {
+    function updateVisibleSlides() {
+      if (window.innerWidth < 480) {
+        setVisibleSlides(1);
+        return;
+      }
+
+      if (window.innerWidth < 768) {
+        setVisibleSlides(2);
+        return;
+      }
+
+      if (window.innerWidth < 1024) {
+        setVisibleSlides(3);
+        return;
+      }
+
+      setVisibleSlides(5);
+    }
+
+    updateVisibleSlides();
+    window.addEventListener('resize', updateVisibleSlides);
+
+    return () => window.removeEventListener('resize', updateVisibleSlides);
+  }, []);
+
+  return visibleSlides;
 }
 
 function ResetCarouselSlideAndGoBack({ watch }: { watch: any }) {
