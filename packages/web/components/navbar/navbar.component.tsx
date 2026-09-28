@@ -26,20 +26,10 @@ export function NavbarComponent() {
   return (
     <NavbarStyles>
       <div className="wrapper">
-        <div className="top-row">
+        <div className="brand-row">
           <Link href="/library/movies" passHref={true}>
             <a className="logo">bobarr</a>
           </Link>
-          <button
-            type="button"
-            className="theme-toggle"
-            onClick={toggleMode}
-            aria-label={`Switch to ${mode === 'dark' ? 'light' : 'dark'} mode`}
-          >
-            <BulbOutlined />
-            {mode === 'dark' ? 'Dark' : 'Light'}
-          </button>
-          <div className="region-select">{data?.params?.region || 'US'}</div>
           <button
             type="button"
             className="mobile-menu-button"
@@ -56,6 +46,18 @@ export function NavbarComponent() {
             </Link>
           ))}
         </nav>
+        <div className="utility-controls" aria-label="Display options">
+          <button
+            type="button"
+            className="theme-toggle"
+            onClick={toggleMode}
+            aria-label={`Switch to ${mode === 'dark' ? 'light' : 'dark'} mode`}
+          >
+            <BulbOutlined />
+            {mode === 'dark' ? 'Dark' : 'Light'}
+          </button>
+          <div className="region-select">{data?.params?.region || 'US'}</div>
+        </div>
       </div>
     </NavbarStyles>
   );

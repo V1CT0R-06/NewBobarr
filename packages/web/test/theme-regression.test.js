@@ -157,6 +157,7 @@ const light = parseThemeColors('lightTheme');
 const appSource = read('pages/_app.tsx');
 const documentSource = read('pages/_document.tsx');
 const navbarSource = read('components/navbar/navbar.component.tsx');
+const navbarStyles = read('components/navbar/navbar.styles.tsx');
 const tvSeasonSource = read(
   'components/tvshow-details/tvseason-details.component.tsx'
 );
@@ -188,6 +189,17 @@ assert(
 assert(
   navbarSource.includes('toggleMode') && navbarSource.includes('theme-toggle'),
   'Navbar should expose a theme toggle'
+);
+assert(
+  navbarSource.includes('utility-controls') &&
+    navbarSource.includes('aria-label="Main navigation"'),
+  'Navbar should keep primary navigation separate from utility controls'
+);
+assert(
+  navbarStyles.includes('max-width: 1220px') &&
+    navbarStyles.includes('grid-template-columns: auto minmax(0, 1fr) auto') &&
+    navbarStyles.includes('min-height: 40px'),
+  'Navbar should use the centered content width, deliberate desktop columns, and usable mobile touch targets'
 );
 assert(
   !tvSeasonSource.includes('<Tag color='),

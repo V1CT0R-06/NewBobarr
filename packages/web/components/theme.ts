@@ -4,7 +4,7 @@ import { DefaultTheme } from 'styled-components';
 export type ThemeMode = 'dark' | 'light';
 
 const sharedTheme = {
-  navbarHeight: 60,
+  navbarHeight: 56,
   tmdbCardHeight: 430,
 };
 
