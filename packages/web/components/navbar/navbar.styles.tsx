@@ -9,18 +9,22 @@ export const NavbarStyles = styled.div`
   top: 0;
   left: 0;
   z-index: 1;
-  width: 100vw;
+  width: 100%;
 
   .wrapper {
     align-items: center;
-    display: flex;
+    display: grid;
     gap: 16px;
-    height: 100%;
-    margin-left: 32px;
-    margin-right: 32px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    margin: 0 auto;
+    max-width: 1220px;
+    min-height: ${({ theme }) => theme.navbarHeight}px;
+    padding: 0 16px;
+    width: 100%;
   }
 
-  .top-row {
+  .brand-row,
+  .utility-controls {
     align-items: center;
     display: flex;
     flex-shrink: 0;
@@ -30,16 +34,19 @@ export const NavbarStyles = styled.div`
   .logo {
     color: ${({ theme }) => theme.colors.text};
     font-family: monospace;
-    font-size: 2em;
+    font-size: 1.6em;
     font-weight: bold;
-    margin-right: 24px;
+    line-height: 1;
     text-decoration: none;
   }
 
   .links {
+    align-items: center;
     display: flex;
+    gap: 4px;
+    justify-content: center;
     min-width: 0;
-    overflow-x: auto;
+    overflow: hidden;
 
     a {
       border: 1px solid transparent;
@@ -47,20 +54,18 @@ export const NavbarStyles = styled.div`
       color: ${({ theme }) => theme.colors.mutedText};
       cursor: pointer;
       display: block;
-      margin-right: 8px;
+      font-size: 0.94em;
+      line-height: 1;
       padding: 6px 10px;
       text-decoration: none;
       transition: 0.1s linear;
+      white-space: nowrap;
 
       &.active,
       &:hover {
         background: ${({ theme }) => theme.colors.hover};
         border-color: ${({ theme }) => theme.colors.border};
         color: ${({ theme }) => theme.colors.text};
-      }
-
-      &:last-child {
-        margin-right: 0;
       }
     }
   }
@@ -73,7 +78,6 @@ export const NavbarStyles = styled.div`
     display: flex;
     font-size: 0.9em;
     justify-items: center;
-    margin-left: 8px;
     padding: 6px 10px;
     transition: 0.1s linear;
 
@@ -116,16 +120,28 @@ export const NavbarStyles = styled.div`
 
   @media (max-width: 900px) {
     .wrapper {
-      margin-left: 16px;
-      margin-right: 16px;
+      gap: 10px;
+      grid-template-columns: auto auto;
+      grid-template-areas:
+        'brand utilities'
+        'links links';
+      padding: 8px 16px;
+    }
+
+    .brand-row {
+      grid-area: brand;
+    }
+
+    .utility-controls {
+      grid-area: utilities;
+      justify-content: flex-end;
     }
 
     .links {
+      grid-area: links;
+      justify-content: flex-start;
       overflow-x: auto;
-    }
-
-    .logo {
-      margin-right: 16px;
+      padding-bottom: 2px;
     }
   }
 
@@ -134,18 +150,20 @@ export const NavbarStyles = styled.div`
 
     .wrapper {
       align-items: stretch;
-      display: block;
-      margin: 0;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-areas:
+        'brand utilities'
+        'links links';
       padding: 8px 12px;
     }
 
-    .top-row {
-      width: 100%;
+    .brand-row {
+      min-width: 0;
     }
 
     .logo {
       font-size: 1.5em;
-      margin-right: auto;
     }
 
     .region-select {
@@ -154,9 +172,11 @@ export const NavbarStyles = styled.div`
 
     .mobile-menu-button {
       display: inline-flex;
+      min-height: 40px;
     }
 
     .theme-toggle {
+      min-height: 40px;
       padding: 8px 10px;
     }
 
@@ -164,9 +184,9 @@ export const NavbarStyles = styled.div`
       display: grid;
       gap: 8px;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      margin-top: 8px;
       max-height: 0;
       overflow: hidden;
+      padding-bottom: 0;
       transition: max-height 0.15s ease;
     }
 

@@ -17,6 +17,7 @@ import {
   TMDBTVShow,
   TMDBFormattedTVSeason,
   TMDBTVEpisode,
+  TMDBTVSeasonDetails,
   TMDBGenres,
   TMDBLanguage,
   GetDiscoverQueries,
@@ -117,6 +118,14 @@ export class TMDBService {
     return this.request<TMDBTVEpisode>(
       `/tv/${tvShowTMDBId}/season/${seasonNumber}/episode/${episodeNumber}`
     );
+  }
+
+  public async getTVSeasonDetails(tvShowTMDBId: number, seasonNumber: number) {
+    const season = await this.request<TMDBTVSeasonDetails>(
+      `/tv/${tvShowTMDBId}/season/${seasonNumber}`
+    );
+
+    return recursiveCamelCase<TMDBFormattedTVSeason>(season);
   }
 
   public async getTVShowSeasons(tvShowTMDBId: number) {

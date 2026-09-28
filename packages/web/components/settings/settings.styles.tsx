@@ -11,6 +11,7 @@ export const SettingsComponentStyles = styled.div`
   }
 
   h1 {
+    color: ${({ theme }) => theme.colors.text};
     font-size: 1.8em;
     font-weight: 700;
     margin-bottom: 20px;

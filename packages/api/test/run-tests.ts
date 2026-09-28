@@ -18,6 +18,7 @@ import {
   normalizeMediaTitle,
   parseEpisodeFile,
 } from '../src/modules/library/reconciliation.helpers';
+import { getVerifiedTMDBEpisodeNumbers } from '../src/modules/library/tmdb-episode.helpers';
 
 function testOrganizerCreatesTVEpisodeFileRecord() {
   const record = buildTVEpisodeFileRecord({
@@ -152,6 +153,30 @@ function testMissingTMDBEpisodeMetadataDoesNotBreakEpisode() {
 }
 
 testMissingTMDBEpisodeMetadataDoesNotBreakEpisode();
+
+function testVerifiedTMDBEpisodeNumbersIgnoreSummaryCounts() {
+  assert.deepStrictEqual(
+    getVerifiedTMDBEpisodeNumbers([
+      { episodeNumber: 1 },
+      { episodeNumber: 2 },
+      { episodeNumber: 2 },
+      { episodeNumber: 0 },
+      { episodeNumber: -1 },
+      { episodeNumber: 4.5 },
+      { episodeNumber: 3 },
+    ]),
+    [1, 2, 3],
+    'Bobarr must create/search only concrete TMDB episode rows, not synthetic episode_count ranges'
+  );
+
+  assert.deepStrictEqual(
+    getVerifiedTMDBEpisodeNumbers(null),
+    [],
+    'missing TMDB season details must not create random episodes'
+  );
+}
+
+testVerifiedTMDBEpisodeNumbersIgnoreSummaryCounts();
 
 function testEpisodeFilenameParsing() {
   assert.deepStrictEqual(

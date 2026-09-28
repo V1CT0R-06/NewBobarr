@@ -157,6 +157,7 @@ const light = parseThemeColors('lightTheme');
 const appSource = read('pages/_app.tsx');
 const documentSource = read('pages/_document.tsx');
 const navbarSource = read('components/navbar/navbar.component.tsx');
+const navbarStyles = read('components/navbar/navbar.styles.tsx');
 const tvSeasonSource = read(
   'components/tvshow-details/tvseason-details.component.tsx'
 );
@@ -164,6 +165,13 @@ const tvShowStyles = read('components/tvshow-details/tvshow-details.styles.tsx')
 const moviesSource = read('components/movies/movies.component.tsx');
 const moviesStyles = read('components/movies/movies.styles.tsx');
 const tvShowsSource = read('components/tvshows/tvshows.component.tsx');
+const calendarSource = read('components/calandar/calendar.component.tsx');
+const calendarStyles = read('components/calandar/calendar.styles.tsx');
+const discoverFilterStyles = read(
+  'components/discover/discover-filter-section.styles.tsx'
+);
+const settingsStyles = read('components/settings/settings.styles.tsx');
+const manualSearchStyles = read('components/manual-search/manual-search.styles.tsx');
 
 assert(
   appSource.includes("useState<ThemeMode>('dark')"),
@@ -183,6 +191,17 @@ assert(
   'Navbar should expose a theme toggle'
 );
 assert(
+  navbarSource.includes('utility-controls') &&
+    navbarSource.includes('aria-label="Main navigation"'),
+  'Navbar should keep primary navigation separate from utility controls'
+);
+assert(
+  navbarStyles.includes('max-width: 1220px') &&
+    navbarStyles.includes('grid-template-columns: auto minmax(0, 1fr) auto') &&
+    navbarStyles.includes('min-height: 40px'),
+  'Navbar should use the centered content width, deliberate desktop columns, and usable mobile touch targets'
+);
+assert(
   !tvSeasonSource.includes('<Tag color='),
   'Episode status tags must not use Ant preset tag colors; they bypass Bobarr dark theme contrast'
 );
@@ -198,6 +217,53 @@ assert(
     tvShowStyles.includes('.episode-action-tag') &&
     tvShowStyles.includes('!important'),
   'Episode controls need explicit theme-aware foreground/background/border styles'
+);
+
+[
+  '.ant-modal-confirm-body .ant-modal-confirm-title',
+  '.ant-modal-confirm-body .ant-modal-confirm-content',
+  '.ant-modal-confirm .ant-btn',
+  '.ant-slider-track',
+  '.ant-picker-cell-in-view',
+  '.ant-pagination-item',
+  '.ant-pagination-item-ellipsis',
+  '.ant-alert-message',
+  '.ant-skeleton.ant-skeleton-active',
+].forEach((selector) => {
+  assert(
+    appSource.includes(selector),
+    `Global theme styles should cover AntD ${selector}`
+  );
+});
+
+assert(
+  !calendarSource.includes('JSON.stringify(error') &&
+    !calendarSource.includes('<pre>'),
+  'Calendar must not render raw GraphQL error objects to normal users'
+);
+assert(
+  calendarSource.includes('Some calendar information could not be loaded') &&
+    calendarSource.includes('Loading calendar'),
+  'Calendar should show concise themed loading/error messages'
+);
+assert(
+  calendarSource.includes('tvEpisode.releaseDate &&') &&
+    calendarStyles.includes('.ant-picker-calendar') &&
+    calendarStyles.includes('.calendar-event') &&
+    calendarStyles.includes('theme.colors.surface'),
+  'Calendar should handle missing episode dates and use Bobarr theme colors'
+);
+assert(
+  discoverFilterStyles.includes('theme.colors.textSecondary'),
+  'Discover filter labels should use theme-aware text colors'
+);
+assert(
+  settingsStyles.includes('h1') && settingsStyles.includes('theme.colors.text'),
+  'Settings headings should use theme-aware text colors'
+);
+assert(
+  manualSearchStyles.includes('.ant-table'),
+  'Torrent modal should keep explicit table styling hooks for theme auditing'
 );
 
 assert(
