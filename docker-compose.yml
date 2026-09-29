@@ -14,7 +14,7 @@ services:
     env_file: .env
     build:
       context: ./packages/api
-    image: bobarr-api:local
+    image: newbobarr-api:local
     command: yarn start:prod
     restart: unless-stopped
     volumes:
@@ -26,7 +26,7 @@ services:
     env_file: .env
     build:
       context: ./packages/web
-    image: bobarr-web:local
+    image: newbobarr-web:local
     command: yarn start
     restart: unless-stopped
     ports:

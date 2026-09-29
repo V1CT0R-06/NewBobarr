@@ -1,36 +1,67 @@
-# Bobarr
+# NewBobarr
 
 <p align="center">
-  <img src="docs/assets/newbobarr-logo.svg" alt="Bobarr popcorn logo" width="120" height="120">
+  <img src="docs/assets/newbobarr-logo.svg" alt="NewBobarr popcorn logo" width="120" height="120">
 </p>
 
-Bobarr is a Docker-based movie and TV show manager for BitTorrent users. It
-finds media, searches Jackett indexers, sends torrents to Transmission,
-organizes completed downloads, and keeps its database in sync with the files in
-your library.
+NewBobarr is a maintained and improved fork of Bobarr. It keeps Bobarr's simple
+all-in-one media automation approach while fixing library, download and UI
+problems, and making the project easier to self-host and maintain.
 
-This repository is NewBobarr, a maintained version of Bobarr based on the
-original [iam4x/bobarr](https://github.com/iam4x/bobarr) project. The
-application is still called Bobarr, and the original history, license, authorship
-and attribution are preserved.
+The application still presents itself as Bobarr for now. This repository keeps
+the original Git history, MIT license, authorship and attribution from
+[iam4x/bobarr](https://github.com/iam4x/bobarr). NewBobarr is a maintained fork;
+it is not the original Bobarr project.
 
 The README logo is the CC0 Popcorn SVG from
 [SVG Repo](https://www.svgrepo.com/svg/484990/popcorn).
 
-## What it includes
+## What is NewBobarr?
+
+NewBobarr is a Docker Compose media manager for BitTorrent users. It searches
+metadata, talks to torrent indexers, sends downloads to Transmission, organizes
+completed media, and tracks the library in PostgreSQL.
+
+The stack includes:
+
+- React and Next.js web UI
+- NestJS GraphQL API
+- PostgreSQL
+- Redis and Bull background jobs
+- TMDB metadata
+- Optional OMDB ratings
+- Jackett indexer searches
+- Transmission downloads
+- Optional FlareSolverr, OpenVPN and WireGuard support
+
+## Why this fork exists
+
+The original Bobarr project is useful, but several real-world self-hosting
+issues needed source-level fixes:
+
+- existing files were not always reconciled into the database;
+- organized TV episode files could be associated incorrectly;
+- missing episodes could search forever even when the user did not want them;
+- successful torrent starts could be reported as failures;
+- dark mode and responsive layouts needed cleanup;
+- public installation docs needed safer defaults and clearer setup steps.
+
+## Features
 
 - Movies and TV shows in one web app
 - TMDB search, discovery, suggestions and calendar data
 - Jackett torrent indexer integration
 - Transmission download integration
 - FlareSolverr support for indexers that need it
-- PostgreSQL database and Redis/Bull background jobs
 - Automatic media organization
-- Existing-library scan and reconciliation
+- Library scan and reconciliation for existing media
 - Recognition of manually copied episodes such as `S01E01`, `S1E1` and `2x05`
+- Correct TV episode file association through `tvEpisodeId`
 - Episode and season monitoring
 - Stop-searching controls for media you do not want
-- Dark and light themes, with dark as the default
+- Clearer download-start feedback
+- Dark and light themes
+- Responsive desktop, tablet and mobile layouts
 - Docker Compose deployment
 - Optional OpenVPN or WireGuard compose overlays
 
@@ -41,26 +72,18 @@ The README logo is the CC0 Popcorn SVG from
 - A TMDB API key
 - Jackett with at least one working indexer
 - Enough disk space for downloads and organized media
-- Host folder permissions that let your configured `PUID` and `PGID` write to
-  the downloads and library folders
+- Host permissions that let your configured `PUID` and `PGID` write to the
+  downloads and media library folders
 
-Bobarr still uses the original Node 14-based stack. Build support depends on
-Docker, the base images, and your platform.
+NewBobarr still uses the original Bobarr Node 14-based stack. Build support
+depends on Docker, the base images and your platform.
 
 ## Quick start
 
-Clone the repository:
+Clone with SSH:
 
 ```bash
 git clone git@github.com:V1CT0R-06/NewBobarr.git newbobarr
-cd newbobarr
-```
-
-SSH cloning requires GitHub SSH authentication. If you only need the public
-source, HTTPS also works:
-
-```bash
-git clone https://github.com/V1CT0R-06/NewBobarr.git newbobarr
 cd newbobarr
 ```
 
@@ -74,8 +97,8 @@ mkdir -p packages/jackett/config packages/jackett/downloads
 mkdir -p packages/transmission/watch packages/vpn
 ```
 
-Edit `.env`. At minimum, change the passwords and set the user/group IDs that
-should own created media files:
+Edit `.env`. At minimum, change passwords and set the user/group IDs that should
+own created media files:
 
 ```dotenv
 POSTGRES_PASSWORD=change-me
@@ -92,7 +115,7 @@ Find your IDs with:
 id $(whoami)
 ```
 
-Start Bobarr:
+Start NewBobarr:
 
 ```bash
 docker compose up -d --build
@@ -100,7 +123,7 @@ docker compose up -d --build
 
 Open:
 
-- Bobarr: <http://localhost:3000>
+- Bobarr web UI: <http://localhost:3000>
 - GraphQL API: <http://localhost:4000/graphql>
 - Jobs dashboard: <http://localhost:4000/jobs>
 - Jackett: <http://localhost:9117>
@@ -108,11 +131,11 @@ Open:
 - FlareSolverr: <http://localhost:8191>
 
 In Jackett, add your indexers. Then open Bobarr Settings and paste the Jackett
-API key.
+API key. Add your TMDB API key in Bobarr Settings as well.
 
 ## Configuration
 
-The main config file is `.env`. These are the most common values:
+The main config file is `.env`. Important values:
 
 ```dotenv
 ENV=production
@@ -127,6 +150,9 @@ POSTGRES_USER=bobarr
 POSTGRES_PASSWORD=change-me
 
 REDIS_PASSWORD=change-me
+
+# Optional. Leave blank to disable OMDB lookups.
+OMDB_API_KEY=
 
 JACKETT_AUTOMATIC_SEARCH_TIMEOUT=120000
 JACKETT_MANUAL_SEARCH_TIMEOUT=15000
@@ -148,7 +174,7 @@ If you serve Bobarr behind a reverse proxy, set `WEB_UI_API_URL` when needed:
 WEB_UI_API_URL=https://bobarr.example.com/api
 ```
 
-## Media library
+## Media library paths
 
 Inside the API container, Bobarr uses:
 
@@ -156,21 +182,21 @@ Inside the API container, Bobarr uses:
 /usr/library
 ```
 
-By default, Compose maps local `./library` there:
+The default compose file maps local `./library` there:
 
 ```yaml
 volumes:
   - ./library:/usr/library
 ```
 
-To use an existing host library, change that mount:
+To use an existing host media library, change that mount:
 
 ```yaml
 volumes:
   - /path/to/media:/usr/library
 ```
 
-If your library folders are named `Movies` and `Shows`, set:
+If your folders are named `Movies` and `Shows`, set:
 
 ```dotenv
 LIBRARY_MOVIES_FOLDER_NAME=Movies
@@ -187,17 +213,17 @@ Reconciliation links existing files to database records, creates safe missing
 season/episode rows, repairs file associations, and skips ambiguous filenames.
 Hidden dot-prefixed folders are ignored.
 
-## Monitoring
+## Monitoring episodes and seasons
 
-Bobarr separates media state from user intent:
+NewBobarr separates media state from user intent:
 
 - Missing and monitored: Bobarr may search for the episode.
 - Missing and not monitored: Bobarr knows it is missing but leaves it alone.
 - Downloaded or processed: Bobarr has a matching local file.
 - Searching or downloading: Bobarr has an active search/download state.
 
-Use `Stop searching` or `Monitor` for one episode, and `Stop searching season`
-or `Monitor season` for a season. Stopping search does not delete files or
+Use `Stop searching` or `Monitor` for one episode. Use `Stop searching season`
+or `Monitor season` for a whole season. Stopping search does not delete files or
 silently remove active Transmission torrents.
 
 ## Updating
@@ -262,7 +288,7 @@ docker compose -f docker-compose.yml -f docker-compose.wireguard.yml up -d
 
 ## Troubleshooting
 
-Start with container status and logs:
+Start with status and logs:
 
 ```bash
 docker compose ps
@@ -285,8 +311,8 @@ Common fixes:
   use.
 - API is unhealthy: check `api` logs, database credentials, Redis password and
   migrations.
-- Searches return nothing: check Jackett, indexers, the Jackett API key,
-  FlareSolverr, and quality/tag filters.
+- Searches return nothing: check Jackett, indexers, the Jackett API key, TMDB
+  key, FlareSolverr and quality/tag filters.
 - Torrent does not download: check API and Transmission logs, then open
   Transmission to see whether the torrent was added, paused or rejected.
 - Finished downloads still show as searching: run `Settings -> Actions -> Scan /
@@ -296,8 +322,7 @@ Common fixes:
   dot-prefixed folders.
 - An episode keeps searching but you do not want it: open the show and use
   `Stop searching` or `Stop searching season`.
-- Permission denied: make sure the host folders are writable by `PUID` and
-  `PGID`.
+- Permission denied: make sure host folders are writable by `PUID` and `PGID`.
 - Migration failed: do not delete the PostgreSQL volume unless you want a reset;
   back up first and inspect `docker compose logs --tail=300 api`.
 
@@ -334,10 +359,10 @@ yarn dev
 
 Architecture notes are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## Project layout
+## Project structure
 
 ```text
-packages/api          API, GraphQL, jobs, database entities, integrations
+packages/api          API, GraphQL, jobs, database entities and integrations
 packages/web          Next.js web UI
 packages/jackett      Jackett config mount
 packages/transmission Transmission config and watch mounts
@@ -345,6 +370,21 @@ packages/vpn          Optional VPN config mounts
 library               Default local media library for Docker Compose
 docs                  Architecture notes and README assets
 ```
+
+## Differences from upstream Bobarr
+
+NewBobarr currently includes source-level fixes and improvements for:
+
+- safer library reconciliation;
+- manually copied media imports;
+- stale file/torrent state handling;
+- correct TV episode `File.tvEpisodeId` associations;
+- episode and season monitoring controls;
+- download success/failure feedback;
+- TMDB enrichment resilience;
+- dark/light theme consistency;
+- responsive navigation and media grids;
+- clearer public Docker setup.
 
 ## Contributing
 

@@ -27,3 +27,7 @@ export const LIBRARY_CONFIG = {
   moviesFolderName: process.env.LIBRARY_MOVIES_FOLDER_NAME,
   tvShowsFolderName: process.env.LIBRARY_TV_SHOWS_FOLDER_NAME,
 };
+
+export const OMDB_CONFIG = {
+  apiKey: process.env.OMDB_API_KEY || '',
+};
