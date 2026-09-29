@@ -2,52 +2,52 @@
 
 NewBobarr is a maintained fork of [Bobarr](https://github.com/iam4x/bobarr), originally created by iam4x.
 
-It is a self-hosted app for managing movies and TV shows. You search for media in one web interface, NewBobarr finds torrents through Jackett, sends them to Transmission, and organizes completed files into your media library.
+It is a self-hosted media app for movies and TV shows. You search in NewBobarr, it finds torrents through Jackett, sends them to Transmission, and organizes completed files into your media library.
 
-This fork keeps Bobarr simple while fixing real homelab problems: better library scans, safer TV episode matching, monitoring controls for unwanted episodes, clearer download feedback, and a cleaner dark/light UI.
+This fork keeps Bobarr simple while adding practical fixes for library scanning, existing media, episode monitoring, download feedback, dark mode, and mobile layout.
 
-## What you get
+## What it includes
 
-- One web UI for movies and TV shows
-- TMDB metadata search
+- NewBobarr web UI
+- NewBobarr API
+- PostgreSQL
+- Redis
+- Jackett
+- FlareSolverr
+- Transmission
+
+Main features:
+
+- Movies and TV shows in one place
+- TMDB metadata
 - Jackett torrent search
 - Transmission downloads
-- Automatic media organization
-- Existing-library scan for media you already have
-- Episode and season monitoring controls
-- “Stop searching” for episodes or seasons you do not want
-- Dark mode, light mode, and responsive layout
-- Docker Compose setup with PostgreSQL, Redis, Jackett, FlareSolverr, and Transmission
+- Automatic organization
+- Existing-library scan
+- “Stop searching” for unwanted episodes/seasons
+- Dark and light themes
 
-## Before you start
+## Requirements
 
-You should already have:
+You need:
 
-- a Linux server or other Docker-capable machine
-- Docker installed
-- the Docker Compose plugin installed
-- enough disk space for downloads and media
+- Docker
+- Docker Compose
 - a TMDB API key
+- enough disk space for downloads and media
 
-You do not need to install PostgreSQL, Redis, Jackett, FlareSolverr, or Transmission separately. The included Compose file starts them for you.
+You do not need to install PostgreSQL, Redis, Jackett, FlareSolverr, or Transmission separately. Docker Compose starts them.
 
 ## Install
-
-Clone the project:
 
 ```bash
 git clone https://github.com/V1CT0R-06/NewBobarr.git
 cd NewBobarr
-```
-
-Create your local config file:
-
-```bash
 cp .env.example .env
 nano .env
 ```
 
-At minimum, change these values:
+Change at least:
 
 ```env
 POSTGRES_PASSWORD=change-this
@@ -56,33 +56,27 @@ PUID=1000
 PGID=1000
 ```
 
-Find your user and group IDs with:
+Find your `PUID` and `PGID` with:
 
 ```bash
 id $(whoami)
 ```
 
-Start NewBobarr:
+Start everything:
 
 ```bash
 docker compose up -d --build
 ```
 
-Check that it started:
-
-```bash
-docker compose ps
-```
-
-Open NewBobarr:
+Open:
 
 ```text
 http://localhost:3000
 ```
 
-If you are installing on a server, replace `localhost` with your server IP or domain.
+If NewBobarr is on another server, replace `localhost` with that server’s IP address or domain.
 
-## First-time setup
+## First setup
 
 1. Open Jackett:
 
@@ -90,59 +84,37 @@ If you are installing on a server, replace `localhost` with your server IP or do
    http://localhost:9117
    ```
 
-2. Add your torrent indexers in Jackett.
-
-3. Copy the Jackett API key from Jackett.
-
+2. Add your torrent indexers.
+3. Copy the Jackett API key.
 4. Open NewBobarr Settings:
 
    ```text
    http://localhost:3000/settings
    ```
 
-5. Add your:
+5. Add your TMDB key, Jackett URL/API key, region, language, qualities, and tags.
 
-   - TMDB API key
-   - Jackett URL
-   - Jackett API key
-   - region and language
-   - preferred qualities and tags
-   - media organization settings
-
-6. If you already have movies or shows, run:
-
-   ```text
-   Settings → Actions → Scan / reconcile library
-   ```
-
-## Important ports
-
-By default:
+Useful URLs:
 
 - NewBobarr: `http://localhost:3000`
-- API / GraphQL: `http://localhost:4000/graphql`
 - API health: `http://localhost:4000/health`
 - Jackett: `http://localhost:9117`
 - Transmission: `http://localhost:9091`
-- FlareSolverr: `http://localhost:8191`
-
-You can change ports in `.env`.
 
 ## Media folders
 
-The default setup stores media inside the project folder:
+By default, NewBobarr uses:
 
 ```text
-NewBobarr/
-  library/
-    downloads/
-    movies/
-    tvshows/
+NewBobarr/library/
+  downloads/
+  movies/
+  tvshows/
 ```
 
-That is fine for testing, but most homelab users should put media on a real media drive.
+For a real homelab, you probably want your media on a larger drive.
 
-Example:
+Example media drive:
 
 ```text
 /path/to/media/
@@ -151,7 +123,7 @@ Example:
   Shows/
 ```
 
-To use that drive, edit `docker-compose.yml`:
+Edit `docker-compose.yml`:
 
 ```yaml
 services:
@@ -164,104 +136,47 @@ services:
       - /path/to/media/downloads:/downloads
 ```
 
-Then make sure `.env` matches your folder names:
+Then make `.env` match your folder names:
 
 ```env
 LIBRARY_MOVIES_FOLDER_NAME=Movies
 LIBRARY_TV_SHOWS_FOLDER_NAME=Shows
 ```
 
-The names are case-sensitive. `Shows` and `shows` are different folders on Linux.
-
-## Using NewBobarr
-
-### Add a movie
-
-1. Search for a movie.
-2. Add it.
-3. Pick a torrent.
-4. Transmission downloads it.
-5. NewBobarr organizes it into your movie folder.
-
-### Add a TV show
-
-1. Search for a show.
-2. Add the show.
-3. Choose the seasons or episodes you want.
-4. Pick torrents.
-5. NewBobarr organizes completed episodes into your TV folder.
-
-### Stop unwanted searches
-
-NewBobarr separates “missing” from “wanted.”
-
-If an episode is missing but you do not want it, click Stop searching. NewBobarr will remember that the episode is missing, but it will stop trying to download it.
-
-You can do this for:
-
-- one episode
-- a whole season
-
-Use Monitor to allow searching again.
+Folder names are case-sensitive on Linux.
 
 ## Existing media
 
-If you already have media files, use:
+If you already have movies or shows, run this after setup:
 
 ```text
 Settings → Actions → Scan / reconcile library
 ```
 
-This tells NewBobarr to look at your actual files and update its database.
+NewBobarr will scan your media folders and link files it can safely recognize.
 
-It can recognize TV episode names like:
+TV filenames should include patterns like:
 
 ```text
 Show Name S01E01.mkv
 Show Name S1E1.mp4
 Show Name 2x05.mkv
-The IT Crowd - S01E01 - 720p [UNKNOWN].mp4
 ```
 
-An empty season folder does not count as downloaded. There must be real video files inside.
+An empty season folder does not count as downloaded media.
 
-If a filename is unclear, NewBobarr skips it instead of guessing.
+## Monitoring
 
-## Updating
+NewBobarr separates “missing” from “wanted.”
 
-Before updating, back up your `.env` and database.
+If an episode is missing but you do not want it, click Stop searching. NewBobarr will remember it is missing but will not keep trying to download it.
 
-Then run:
+You can stop or restart searching for:
 
-```bash
-git pull
-docker compose build
-docker compose up -d
-docker compose logs -f api
-```
+- one episode
+- a whole season
 
-Database migrations run when the API starts.
-
-## Backup
-
-Back up at least:
-
-- `.env`
-- your changed `docker-compose.yml`
-- PostgreSQL database
-- Jackett config
-- Transmission config
-
-Example database backup:
-
-```bash
-mkdir -p backups
-docker compose exec -T postgres sh -lc 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backups/bobarr-db.sql
-```
-
-Your media files are separate. Back them up with your normal media backup method.
-
-## Useful commands
+## Common commands
 
 ```bash
 # Start
@@ -270,151 +185,67 @@ docker compose up -d
 # Stop
 docker compose down
 
-# See containers
+# Status
 docker compose ps
 
-# Follow logs
+# Logs
 docker compose logs -f
 
-# Follow API logs
+# API logs
 docker compose logs -f api
 
-# Rebuild after updating source
+# Update
+git pull
 docker compose build
+docker compose up -d
 ```
 
-## Common problems
+## Troubleshooting
 
-### The web page does not load
-
-Run:
+If the web UI does not load:
 
 ```bash
 docker compose ps
 docker compose logs -f web api
 ```
 
-Check that port `3000` is not already used. If it is, change `WEB_PORT` in `.env`.
-
-### Search finds no torrents
-
-Check:
-
-- Jackett is running
-- your Jackett indexers work
-- the Jackett API key is saved in NewBobarr Settings
-- your language, region, quality, or tag filters are not too strict
-
-Logs:
+If search finds no torrents, check Jackett:
 
 ```bash
 docker compose logs -f api jackett
 ```
 
-### Downloads do not start
-
-Check Transmission:
+If downloads do not start, check Transmission:
 
 ```bash
 docker compose logs -f api transmission
 ```
 
-Also check that Jackett can still download the torrent. Some indexer links expire.
-
-### A completed download still says searching
-
-Run:
+If completed media is not detected, run:
 
 ```text
 Settings → Actions → Scan / reconcile library
 ```
 
-Then check API logs:
-
-```bash
-docker compose logs -f api
-```
-
-### Existing files are not detected
-
-Check:
-
-- files are inside the mounted media folder
-- the container can read them
-- folder names in `.env` match the real folders
-- TV filenames contain a pattern like `S01E01`, `S1E1`, or `2x05`
-
-### Permission denied
-
-Check your user IDs:
+If files cannot be moved, check permissions:
 
 ```bash
 id $(whoami)
+ls -la library
 ```
 
-Set `PUID` and `PGID` in `.env` to those values. Also make sure your media folders are writable by that user.
-
-## How it works
-
-```text
-Web UI
-  ↓
-API
-  ├─ PostgreSQL database
-  ├─ Redis jobs
-  ├─ TMDB / OMDB metadata
-  ├─ Jackett torrent search
-  └─ Transmission downloads
-       ↓
-     Organizer
-       ↓
-  Movies / TV Shows folders
-```
-
-More developer detail is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Set `PUID` and `PGID` in `.env` to the user that should own media files.
 
 ## Development
 
-Install dependencies:
-
 ```bash
 yarn
-```
-
-Run the development stack:
-
-```bash
-yarn dev
-```
-
-Run checks:
-
-```bash
 yarn lint
 cd packages/api && yarn test
 cd ../web && yarn gql-gen && yarn test
 ```
 
-Build:
-
-```bash
-cd packages/api && yarn build
-cd ../web && yarn build
-docker compose build
-```
-
-Main folders:
-
-- `packages/api` — backend API, database, jobs, integrations
-- `packages/web` — frontend web app
-- `docs` — developer documentation
-- `library` — default local media folder
-
-## Contributing
-
-Fork the repo, make a focused change, add or update tests, run the checks, and open a pull request.
-
-Do not include API keys, passwords, database dumps, private domains, private IPs, or personal media files.
+More architecture notes are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Credits and license
 
