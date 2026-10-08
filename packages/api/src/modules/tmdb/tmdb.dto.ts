@@ -92,6 +92,12 @@ export interface TMDBTVShow {
   }>;
 }
 
+export interface TMDBTVAlternativeTitle {
+  iso_3166_1: string;
+  title: string;
+  type: string;
+}
+
 export interface TMDBTVEpisode {
   id: number;
   air_date: string;

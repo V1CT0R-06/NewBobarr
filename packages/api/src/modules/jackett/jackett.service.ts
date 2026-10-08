@@ -13,6 +13,7 @@ import { sanitize } from 'src/utils/sanitize';
 
 import { ParamsService } from 'src/modules/params/params.service';
 import { LibraryService } from 'src/modules/library/library.service';
+import { TMDBService } from 'src/modules/tmdb/tmdb.service';
 
 import { TVSeasonDAO } from 'src/entities/dao/tvseason.dao';
 import { TVEpisodeDAO } from 'src/entities/dao/tvepisode.dao';
@@ -23,13 +24,19 @@ import { JackettResult, JackettIndexer } from './jackett.dto';
 import { Entertainment } from '../tmdb/tmdb.dto';
 import { PromiseRaceAll } from 'src/utils/promise-resolve';
 import { JACKETT_RESPONSE_TIMEOUT } from 'src/config';
+import {
+  isMatchingTVTorrent,
+  TVTorrentExpectation,
+} from './tv-torrent-validation';
 
 @Injectable()
 export class JackettService {
+  // eslint-disable-next-line max-params
   public constructor(
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
     private readonly paramsService: ParamsService,
     private readonly libraryService: LibraryService,
+    private readonly tmdbService: TMDBService,
     private readonly tvSeasonDAO: TVSeasonDAO,
     private readonly tvEpisodeDAO: TVEpisodeDAO
   ) {
@@ -97,13 +104,17 @@ export class JackettService {
     const enTVShow = await this.libraryService.getTVShow(tvSeason.tvShow.id, {
       language: 'en',
     });
+    const alternativeTitles = await this.tmdbService
+      .getTVShowAlternativeTitles(tvSeason.tvShow.tmdbId)
+      .catch(() => []);
 
-    const titles = [tvShow.title, enTVShow.title];
+    const queryTitles = [tvShow.title, enTVShow.title];
     if (this.canSearchOriginalTitle(tvShow.originCountry)) {
-      titles.push(tvShow.originalTitle);
+      queryTitles.push(tvShow.originalTitle);
     }
+    const acceptedTitles = uniq([...queryTitles, ...alternativeTitles]);
 
-    const queries = uniq(titles)
+    const queries = uniq(queryTitles)
       // support "American Dad!" like
       .map((title) => title.replace('!', ''))
       .map((title) => [
@@ -117,6 +128,11 @@ export class JackettService {
       maxSize: maxSize * tvSeason.episodes.length,
       isSeason: true,
       type: Entertainment.TvShow,
+      expectedTV: {
+        titles: acceptedTitles,
+        seasonNumber: tvSeason.seasonNumber,
+        releaseYear: dayjs(tvShow.releaseDate).year(),
+      },
     });
   }
 
@@ -136,16 +152,20 @@ export class JackettService {
     const enTVShow = await this.libraryService.getTVShow(tvEpisode.tvShow.id, {
       language: 'en',
     });
+    const alternativeTitles = await this.tmdbService
+      .getTVShowAlternativeTitles(tvEpisode.tvShow.tmdbId)
+      .catch(() => []);
 
     const s = formatNumber(tvEpisode.seasonNumber);
     const e = formatNumber(tvEpisode.episodeNumber);
 
-    const titles = [tvShow.title, enTVShow.title];
+    const queryTitles = [tvShow.title, enTVShow.title];
     if (this.canSearchOriginalTitle(tvShow.originCountry)) {
-      titles.push(tvShow.originalTitle);
+      queryTitles.push(tvShow.originalTitle);
     }
+    const acceptedTitles = uniq([...queryTitles, ...alternativeTitles]);
 
-    const queries = uniq(titles)
+    const queries = uniq(queryTitles)
       .map((title) => [
         `${title} S${s}E${e}`,
         `${title} Season ${s} Episode ${e}`,
@@ -153,7 +173,16 @@ export class JackettService {
       ])
       .flat();
 
-    return this.search(queries, { maxSize, type: Entertainment.TvShow });
+    return this.search(queries, {
+      maxSize,
+      type: Entertainment.TvShow,
+      expectedTV: {
+        titles: acceptedTitles,
+        seasonNumber: tvEpisode.seasonNumber,
+        episodeNumber: tvEpisode.episodeNumber,
+        releaseYear: dayjs(tvShow.releaseDate).year(),
+      },
+    });
   }
 
   public async search(
@@ -163,6 +192,7 @@ export class JackettService {
       isSeason?: boolean;
       withoutFilter?: boolean;
       type?: Entertainment;
+      expectedTV?: TVTorrentExpectation;
     }
   ) {
     const indexers = await this.getConfiguredIndexers();
@@ -213,6 +243,7 @@ export class JackettService {
     isSeason = false,
     withoutFilter = false,
     type,
+    expectedTV,
   }: {
     queries: string[];
     indexer?: JackettIndexer;
@@ -220,6 +251,7 @@ export class JackettService {
     isSeason?: boolean;
     withoutFilter?: boolean;
     type?: Entertainment;
+    expectedTV?: TVTorrentExpectation;
   }) {
     const qualityParams = await this.paramsService.getQualities(type);
     const preferredTags = await this.paramsService.getTags();
@@ -256,6 +288,10 @@ export class JackettService {
       )
       .filter((result) => {
         if (withoutFilter) return true;
+
+        if (expectedTV && !isMatchingTVTorrent(result.title, expectedTV)) {
+          return false;
+        }
 
         const hasAcceptableSize = result.size < maxSize;
         const hasSeeders = result.seeders >= 5 && result.seeders > result.peers;

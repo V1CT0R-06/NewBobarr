@@ -21,6 +21,7 @@ import {
 import { getVerifiedTMDBEpisodeNumbers } from '../src/modules/library/tmdb-episode.helpers';
 import { buildDiscoverRequestParams } from '../src/modules/tmdb/discover.helpers';
 import { Entertainment } from '../src/modules/tmdb/tmdb.dto';
+import { isMatchingTVTorrent } from '../src/modules/jackett/tv-torrent-validation';
 
 function testOrganizerCreatesTVEpisodeFileRecord() {
   const record = buildTVEpisodeFileRecord({
@@ -288,6 +289,117 @@ function testDiscoverUsesEndpointSpecificYearParameter() {
 testDiscoverLanguageAndCountryFilters();
 testDiscoverEmptyFiltersPreserveExistingBehavior();
 testDiscoverUsesEndpointSpecificYearParameter();
+
+function testTVSeasonTorrentValidation() {
+  const houseSeasonOne = {
+    titles: ['House (2004)', 'House M.D.'],
+    seasonNumber: 1,
+    releaseYear: 2004,
+  };
+
+  assert.strictEqual(
+    isMatchingTVTorrent(
+      'House, M.D. (2004) Season 01 S01 1080p BluRay x265',
+      houseSeasonOne
+    ),
+    true,
+    'a verified House M.D. alias must be accepted'
+  );
+  assert.strictEqual(
+    isMatchingTVTorrent('House.2004.S01.1080p.BluRay.x265', houseSeasonOne),
+    true
+  );
+  assert.strictEqual(
+    isMatchingTVTorrent(
+      'House.of.the.Dragon.S01.COMPLETE.720p.HMAX.WEBRip.x264',
+      houseSeasonOne
+    ),
+    false,
+    'a title containing the word House is not the show House'
+  );
+  assert.strictEqual(
+    isMatchingTVTorrent('House.M.D.2004.S02.COMPLETE.1080p', houseSeasonOne),
+    false,
+    'a pack for another season must be rejected'
+  );
+  assert.strictEqual(
+    isMatchingTVTorrent('House.M.D.2004.S01E01.1080p', houseSeasonOne),
+    false,
+    'an individual episode is not a complete season pack'
+  );
+  assert.strictEqual(
+    isMatchingTVTorrent('House.S01.1080p', {
+      titles: ['Full House'],
+      seasonNumber: 1,
+      releaseYear: 1987,
+    }),
+    false,
+    'ambiguous partial title matches must fail safely'
+  );
+  assert.strictEqual(
+    isMatchingTVTorrent('House.2022.S01.1080p', houseSeasonOne),
+    false,
+    'a conflicting release year must be rejected when present'
+  );
+}
+
+function testTVEpisodeTorrentValidation() {
+  const houseEpisode = {
+    titles: ['House', 'House M.D.'],
+    seasonNumber: 1,
+    episodeNumber: 2,
+    releaseYear: 2004,
+  };
+
+  assert.strictEqual(
+    isMatchingTVTorrent('House.M.D.S01E02.720p.HDTV.x264', houseEpisode),
+    true
+  );
+  assert.strictEqual(
+    isMatchingTVTorrent('House.M.D.S01E03.720p.HDTV.x264', houseEpisode),
+    false,
+    'an episode search must require the requested episode number'
+  );
+  assert.strictEqual(
+    isMatchingTVTorrent(
+      'House.of.the.Dragon.S01E02.720p.WEBRip.x264',
+      houseEpisode
+    ),
+    false
+  );
+}
+
+function testOtherLegitimateTVReleaseNames() {
+  assert.strictEqual(
+    isMatchingTVTorrent('The.IT.Crowd.S04.720p.WEB-DL.H265', {
+      titles: ['The IT Crowd'],
+      seasonNumber: 4,
+      releaseYear: 2006,
+    }),
+    true
+  );
+  assert.strictEqual(
+    isMatchingTVTorrent('Futurama Season 06 1080p BluRay', {
+      titles: ['Futurama'],
+      seasonNumber: 6,
+      releaseYear: 1999,
+    }),
+    true
+  );
+  assert.strictEqual(
+    isMatchingTVTorrent('Smiling.Friends.S02E03.1080p.WEB-DL', {
+      titles: ['Smiling Friends'],
+      seasonNumber: 2,
+      episodeNumber: 3,
+      releaseYear: 2020,
+    }),
+    true
+  );
+}
+
+testTVSeasonTorrentValidation();
+testTVEpisodeTorrentValidation();
+testOtherLegitimateTVReleaseNames();
 
 function testEpisodeFilenameParsing() {
   assert.deepStrictEqual(

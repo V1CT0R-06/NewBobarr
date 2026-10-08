@@ -15,6 +15,7 @@ import { MovieDAO } from 'src/entities/dao/movie.dao';
 import {
   TMDBMovie,
   TMDBTVShow,
+  TMDBTVAlternativeTitle,
   TMDBFormattedTVSeason,
   TMDBTVEpisode,
   TMDBTVSeasonDetails,
@@ -106,6 +107,14 @@ export class TMDBService {
       language: 'en',
     });
     return name;
+  }
+
+  public async getTVShowAlternativeTitles(tvShowTMDBId: number) {
+    const { results } = await this.request<{
+      results: TMDBTVAlternativeTitle[];
+    }>(`/tv/${tvShowTMDBId}/alternative_titles`);
+
+    return results.map(({ title }) => title);
   }
 
   @CacheMethod({
