@@ -1,6 +1,7 @@
 query getDiscover(
   $entertainment: Entertainment
   $originLanguage: String
+  $originCountry: String
   $primaryReleaseYear: String
   $score: Float
   $genres: [Float!]
@@ -9,6 +10,7 @@ query getDiscover(
   TMDBResults: discover(
     entertainment: $entertainment
     originLanguage: $originLanguage
+    originCountry: $originCountry
     primaryReleaseYear: $primaryReleaseYear
     score: $score
     genres: $genres

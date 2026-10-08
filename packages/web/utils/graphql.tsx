@@ -111,6 +111,12 @@ export type TmdbLanguagesResult = {
   language: Scalars['String'];
 };
 
+export type TmdbCountriesResult = {
+  __typename?: 'TMDBCountriesResult';
+  code: Scalars['String'];
+  country: Scalars['String'];
+};
+
 export type TmdbGenresResult = {
   __typename?: 'TMDBGenresResult';
   id: Scalars['Float'];
@@ -302,6 +308,7 @@ export type Query = {
   getRecommendedMovies: Array<TmdbSearchResult>;
   discover: TmdbPaginatedResult;
   getLanguages: Array<TmdbLanguagesResult>;
+  getCountries: Array<TmdbCountriesResult>;
   getGenres: TmdbGenresResults;
   searchJackett: Array<JackettFormattedResult>;
   getTorrentStatus: Array<TorrentStatus>;
@@ -335,6 +342,7 @@ export type QueryGetTvShowSeasonsArgs = {
 
 export type QueryDiscoverArgs = {
   originLanguage?: Maybe<Scalars['String']>;
+  originCountry?: Maybe<Scalars['String']>;
   primaryReleaseYear?: Maybe<Scalars['String']>;
   score?: Maybe<Scalars['Float']>;
   genres?: Maybe<Array<Scalars['Float']>>;
@@ -777,9 +785,21 @@ export type GetCalendarQuery = (
   ) }
 );
 
+export type GetCountriesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetCountriesQuery = (
+  { __typename?: 'Query' }
+  & { countries: Array<(
+    { __typename?: 'TMDBCountriesResult' }
+    & Pick<TmdbCountriesResult, 'code' | 'country'>
+  )> }
+);
+
 export type GetDiscoverQueryVariables = Exact<{
   entertainment?: Maybe<Entertainment>;
   originLanguage?: Maybe<Scalars['String']>;
+  originCountry?: Maybe<Scalars['String']>;
   primaryReleaseYear?: Maybe<Scalars['String']>;
   score?: Maybe<Scalars['Float']>;
   genres?: Maybe<Array<Scalars['Float']>>;
@@ -1384,11 +1404,29 @@ export function useGetCalendarLazyQuery(baseOptions?: Apollo.LazyQueryHookOption
 export type GetCalendarQueryHookResult = ReturnType<typeof useGetCalendarQuery>;
 export type GetCalendarLazyQueryHookResult = ReturnType<typeof useGetCalendarLazyQuery>;
 export type GetCalendarQueryResult = Apollo.QueryResult<GetCalendarQuery, GetCalendarQueryVariables>;
+export const GetCountriesDocument = gql`
+    query getCountries {
+  countries: getCountries {
+    code
+    country
+  }
+}
+    `;
+export function useGetCountriesQuery(baseOptions?: Apollo.QueryHookOptions<GetCountriesQuery, GetCountriesQueryVariables>) {
+        return Apollo.useQuery<GetCountriesQuery, GetCountriesQueryVariables>(GetCountriesDocument, baseOptions);
+      }
+export function useGetCountriesLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetCountriesQuery, GetCountriesQueryVariables>) {
+          return Apollo.useLazyQuery<GetCountriesQuery, GetCountriesQueryVariables>(GetCountriesDocument, baseOptions);
+        }
+export type GetCountriesQueryHookResult = ReturnType<typeof useGetCountriesQuery>;
+export type GetCountriesLazyQueryHookResult = ReturnType<typeof useGetCountriesLazyQuery>;
+export type GetCountriesQueryResult = Apollo.QueryResult<GetCountriesQuery, GetCountriesQueryVariables>;
 export const GetDiscoverDocument = gql`
-    query getDiscover($entertainment: Entertainment, $originLanguage: String, $primaryReleaseYear: String, $score: Float, $genres: [Float!], $page: Float) {
+    query getDiscover($entertainment: Entertainment, $originLanguage: String, $originCountry: String, $primaryReleaseYear: String, $score: Float, $genres: [Float!], $page: Float) {
   TMDBResults: discover(
     entertainment: $entertainment
     originLanguage: $originLanguage
+    originCountry: $originCountry
     primaryReleaseYear: $primaryReleaseYear
     score: $score
     genres: $genres

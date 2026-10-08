@@ -89,6 +89,11 @@ type TMDBLanguagesResult {
   language: String!
 }
 
+type TMDBCountriesResult {
+  code: String!
+  country: String!
+}
+
 type TMDBGenresResult {
   id: Float!
   name: String!
@@ -265,8 +270,9 @@ type Query {
   getTVShowSeasons(tvShowTMDBId: Int!): [TMDBFormattedTVSeason!]!
   getRecommendedTVShows: [TMDBSearchResult!]!
   getRecommendedMovies: [TMDBSearchResult!]!
-  discover(originLanguage: String, primaryReleaseYear: String, score: Float, genres: [Float!], page: Float, entertainment: Entertainment = Movie): TMDBPaginatedResult!
+  discover(originLanguage: String, originCountry: String, primaryReleaseYear: String, score: Float, genres: [Float!], page: Float, entertainment: Entertainment = Movie): TMDBPaginatedResult!
   getLanguages: [TMDBLanguagesResult!]!
+  getCountries: [TMDBCountriesResult!]!
   getGenres: TMDBGenresResults!
   searchJackett(query: String!): [JackettFormattedResult!]!
   getTorrentStatus(torrents: [GetTorrentStatusInput!]!): [TorrentStatus!]!

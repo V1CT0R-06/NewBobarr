@@ -8,6 +8,7 @@ export interface TMDBRequestParams {
   'vote_count.gte'?: number;
   'vote_average.gte'?: number;
   with_original_language?: string;
+  with_origin_country?: string;
   primary_release_year?: number; // movie
   first_air_date_year?: number; // tv show
   page?: number;
@@ -21,7 +22,7 @@ export interface TMDBMovie {
   genres: Array<{ id: number; name: string }>;
   homepage: string;
   imdb_id: number;
-  original_language: string[];
+  original_language: string;
   original_title: string;
   overview: string;
   popularity: number;
@@ -120,6 +121,12 @@ export interface TMDBLanguage {
   name: string;
 }
 
+export interface TMDBCountry {
+  iso_3166_1: string;
+  english_name: string;
+  native_name: string;
+}
+
 export interface TMDBGenres {
   id: number;
   name: string;
@@ -192,6 +199,12 @@ export class TMDBLanguagesResult {
 }
 
 @ObjectType()
+export class TMDBCountriesResult {
+  @Field() public code!: string;
+  @Field() public country!: string;
+}
+
+@ObjectType()
 export class TMDBGenresResult {
   @Field() public id!: number;
   @Field() public name!: string;
@@ -217,6 +230,7 @@ registerEnumType(Entertainment, {
 @ArgsType()
 export class GetDiscoverQueries {
   @Field({ nullable: true }) public originLanguage?: string;
+  @Field({ nullable: true }) public originCountry?: string;
   @Field({ nullable: true }) public primaryReleaseYear?: string;
   @Field({ nullable: true }) public score?: number;
   @Field((_type) => [Number], { nullable: true }) public genres?: number[];

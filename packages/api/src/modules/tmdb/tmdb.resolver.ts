@@ -11,6 +11,7 @@ import {
   TMDBFormattedTVSeason,
   TMDBSearchResult,
   TMDBLanguagesResult,
+  TMDBCountriesResult,
   TMDBGenresResults,
   GetDiscoverQueries,
   TMDBPaginatedResult,
@@ -67,6 +68,11 @@ export class TMDBResolver {
   @Query((_returns) => [TMDBLanguagesResult])
   public getLanguages() {
     return this.tmdbService.getLanguages();
+  }
+
+  @Query((_returns) => [TMDBCountriesResult])
+  public getCountries() {
+    return this.tmdbService.getCountries();
   }
 
   @Query((_returns) => TMDBGenresResults)

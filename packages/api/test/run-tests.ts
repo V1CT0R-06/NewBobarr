@@ -19,6 +19,8 @@ import {
   parseEpisodeFile,
 } from '../src/modules/library/reconciliation.helpers';
 import { getVerifiedTMDBEpisodeNumbers } from '../src/modules/library/tmdb-episode.helpers';
+import { buildDiscoverRequestParams } from '../src/modules/tmdb/discover.helpers';
+import { Entertainment } from '../src/modules/tmdb/tmdb.dto';
 
 function testOrganizerCreatesTVEpisodeFileRecord() {
   const record = buildTVEpisodeFileRecord({
@@ -177,6 +179,115 @@ function testVerifiedTMDBEpisodeNumbersIgnoreSummaryCounts() {
 }
 
 testVerifiedTMDBEpisodeNumbersIgnoreSummaryCounts();
+
+function testDiscoverLanguageAndCountryFilters() {
+  assert.deepStrictEqual(
+    buildDiscoverRequestParams({
+      entertainment: Entertainment.Movie,
+      originLanguage: 'pt',
+      originCountry: 'PT',
+    }),
+    {
+      'vote_count.gte': 50,
+      with_original_language: 'pt',
+      with_origin_country: 'PT',
+    }
+  );
+
+  assert.deepStrictEqual(
+    buildDiscoverRequestParams({
+      entertainment: Entertainment.TvShow,
+      originLanguage: 'pt',
+      originCountry: 'BR',
+    }),
+    {
+      'vote_count.gte': 50,
+      with_original_language: 'pt',
+      with_origin_country: 'BR',
+    }
+  );
+
+  assert.deepStrictEqual(
+    buildDiscoverRequestParams({
+      entertainment: Entertainment.Movie,
+      originLanguage: 'en',
+      originCountry: 'GB',
+    }),
+    {
+      'vote_count.gte': 50,
+      with_original_language: 'en',
+      with_origin_country: 'GB',
+    }
+  );
+}
+
+function testDiscoverEmptyFiltersPreserveExistingBehavior() {
+  assert.deepStrictEqual(
+    buildDiscoverRequestParams({
+      entertainment: Entertainment.Movie,
+      originCountry: '',
+      genres: [],
+      score: 0,
+    }),
+    { 'vote_count.gte': 50 },
+    'Any country and empty filters must not add TMDB query parameters'
+  );
+
+  assert.deepStrictEqual(
+    buildDiscoverRequestParams({
+      entertainment: Entertainment.TvShow,
+      originLanguage: 'pt',
+    }),
+    {
+      'vote_count.gte': 50,
+      with_original_language: 'pt',
+    },
+    'Portuguese with Any country must retain the existing language-only behavior'
+  );
+}
+
+function testDiscoverUsesEndpointSpecificYearParameter() {
+  assert.deepStrictEqual(
+    buildDiscoverRequestParams({
+      entertainment: Entertainment.Movie,
+      primaryReleaseYear: '1999',
+      page: 2,
+      score: 70,
+      genres: [12, 35],
+    }),
+    {
+      'vote_count.gte': 50,
+      'vote_average.gte': 7,
+      with_genres: '12,35',
+      primary_release_year: 1999,
+      page: 2,
+    }
+  );
+
+  assert.deepStrictEqual(
+    buildDiscoverRequestParams({
+      entertainment: Entertainment.TvShow,
+      primaryReleaseYear: '2001',
+    }),
+    {
+      'vote_count.gte': 50,
+      first_air_date_year: 2001,
+    }
+  );
+
+  assert.deepStrictEqual(
+    buildDiscoverRequestParams({
+      entertainment: Entertainment.Movie,
+      primaryReleaseYear: 'not-a-year',
+    }),
+    { 'vote_count.gte': 50 },
+    'invalid years must not be sent to TMDB'
+  );
+}
+
+testDiscoverLanguageAndCountryFilters();
+testDiscoverEmptyFiltersPreserveExistingBehavior();
+testDiscoverUsesEndpointSpecificYearParameter();
 
 function testEpisodeFilenameParsing() {
   assert.deepStrictEqual(

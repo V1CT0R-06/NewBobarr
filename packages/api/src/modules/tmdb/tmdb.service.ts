@@ -20,11 +20,13 @@ import {
   TMDBTVSeasonDetails,
   TMDBGenres,
   TMDBLanguage,
+  TMDBCountry,
   GetDiscoverQueries,
   TMDBPagination,
   Entertainment,
   TMDBRequestParams,
 } from './tmdb.dto';
+import { buildDiscoverRequestParams } from './discover.helpers';
 
 import { CacheMethod } from '../redis/cache.interceptor';
 import { CacheKeys } from '../redis/cache.dto';
@@ -244,7 +246,11 @@ export class TMDBService {
 
     return orderBy(allSimilars, ['count', 'popularity'], ['desc', 'desc'])
       .filter((_row, index) => index <= 50)
-      .map(type === 'movie' ? this.mapMovie : this.mapTVShow);
+      .map((result) =>
+        type === 'movie'
+          ? this.mapMovie(result as TMDBMovie)
+          : this.mapTVShow(result as TMDBTVShow)
+      );
   }
 
   @CacheMethod({
@@ -258,31 +264,10 @@ export class TMDBService {
   public async discover(args: GetDiscoverQueries) {
     this.logger.info('start discovery filter', args);
 
-    const {
-      primaryReleaseYear,
-      entertainment,
-      originLanguage,
-      score,
-      genres,
-      page,
-    } = args;
-
-    const normalizedArgs = {
-      'vote_count.gte': 50,
-      with_genres: genres?.join(','),
-      with_original_language: originLanguage,
-      'vote_average.gte': score && score / 10,
-      ...(Entertainment.Movie && {
-        primary_release_year: Number(primaryReleaseYear),
-      }),
-      ...(Entertainment.TvShow && {
-        first_air_date_year: Number(primaryReleaseYear),
-      }),
-      page,
-    };
+    const normalizedArgs = buildDiscoverRequestParams(args);
 
     this.logger.info('finish discovery filter');
-    if (entertainment === Entertainment.Movie) {
+    if (args.entertainment === Entertainment.Movie) {
       return await this.discoverMovie(normalizedArgs);
     }
 
@@ -338,6 +323,25 @@ export class TMDBService {
     }));
   }
 
+  public async getCountries() {
+    this.logger.info('start get TMDB countries');
+
+    const results = await this.request<TMDBCountry[]>(
+      '/configuration/countries'
+    );
+
+    this.logger.info('finish get TMDB countries');
+
+    return orderBy(
+      results.map(({ iso_3166_1: code, english_name: country }) => ({
+        code,
+        country,
+      })),
+      ['country'],
+      ['asc']
+    );
+  }
+
   public async getGenres() {
     this.logger.info('start get TMDB genres');
 
@@ -362,7 +366,7 @@ export class TMDBService {
       overview: result.overview,
       runtime: result.runtime,
       originalTitle: result.original_title,
-      originCountry: result.original_language,
+      originalLanguage: result.original_language,
       releaseDate: result.release_date,
       posterPath: result.poster_path,
       voteAverage: result.vote_average,

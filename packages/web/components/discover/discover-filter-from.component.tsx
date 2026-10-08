@@ -12,6 +12,7 @@ import { DiscoverFilterSectionComponent } from './discover-filter-section.compon
 import {
   GetDiscoverQueryVariables,
   useGetLanguagesQuery,
+  useGetCountriesQuery,
   useGetGenresQuery,
   Entertainment,
 } from '../../utils/graphql';
@@ -25,6 +26,7 @@ export function DiscoverFilterFormComponent(
   props: DiscoverFilterFormComponentProps
 ) {
   const languagesQuery = useGetLanguagesQuery();
+  const countriesQuery = useGetCountriesQuery();
   const genresQuery = useGetGenresQuery();
 
   const [entertainment, setEntertainment] = useState<Entertainment>(
@@ -32,6 +34,7 @@ export function DiscoverFilterFormComponent(
   );
 
   const TMDBLanguages = languagesQuery.data?.languages;
+  const TMDBCountries = countriesQuery.data?.countries;
   const TMDBMovieGenres = useMemo(
     () =>
       genresQuery.data?.genres.movieGenres?.map(({ id, name }) => ({
@@ -63,6 +66,16 @@ export function DiscoverFilterFormComponent(
         );
       }),
     [TMDBLanguages]
+  );
+
+  const countryOptions = useMemo(
+    () =>
+      TMDBCountries?.map(({ country, code }) => (
+        <Select.Option key={code} value={code}>
+          {country}
+        </Select.Option>
+      )),
+    [TMDBCountries]
   );
 
   const onSearch = (values: GetDiscoverQueryVariables) => {
@@ -103,6 +116,21 @@ export function DiscoverFilterFormComponent(
             size="middle"
           >
             {languageOptions}
+          </Select>
+        </Form.Item>
+      </DiscoverFilterSectionComponent>
+      <DiscoverFilterSectionComponent title="Country of origin">
+        <Form.Item key="originCountry" name="originCountry">
+          <Select
+            allowClear
+            showSearch
+            style={{ width: '100%' }}
+            placeholder="Any country"
+            optionFilterProp="children"
+            size="middle"
+          >
+            <Select.Option value="">Any country</Select.Option>
+            {countryOptions}
           </Select>
         </Form.Item>
       </DiscoverFilterSectionComponent>
