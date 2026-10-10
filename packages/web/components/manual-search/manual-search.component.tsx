@@ -119,7 +119,6 @@ export function ManualSearchComponent(props: ManualSearchProps) {
 
   return (
     <Modal
-      wrapClassName="mobile-fullscreen-modal"
       visible={true}
       destroyOnClose={true}
       onCancel={handleClose}

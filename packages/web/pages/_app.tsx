@@ -531,49 +531,6 @@ const GlobalStyles = createGlobalStyle`
       width: calc(100vw - 16px) !important;
     }
 
-    .media-details-modal,
-    .mobile-fullscreen-modal {
-      overflow: hidden;
-      padding: 0;
-    }
-
-    .media-details-modal .ant-modal,
-    .mobile-fullscreen-modal .ant-modal {
-      height: 100vh;
-      height: 100dvh;
-      margin: 0;
-      max-width: none;
-      padding: 0;
-      width: 100vw !important;
-    }
-
-    .media-details-modal .ant-modal-content,
-    .mobile-fullscreen-modal .ant-modal-content {
-      border-radius: 0;
-      height: 100%;
-      overflow: hidden;
-    }
-
-    .media-details-modal .ant-modal-body {
-      height: 100%;
-      max-height: none;
-      overflow: hidden;
-      padding: 0 !important;
-    }
-
-    .mobile-fullscreen-modal .ant-modal-body {
-      height: calc(100% - 65px);
-      max-height: none;
-      overscroll-behavior-y: contain;
-      overflow-y: auto;
-      padding: 16px;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .mobile-fullscreen-modal .ant-modal-footer {
-      min-height: 65px;
-    }
-
     .ant-modal-centered .ant-modal {
       display: block;
     }

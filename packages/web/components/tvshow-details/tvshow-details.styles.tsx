@@ -196,10 +196,6 @@ export const TVShowSeasonsModalComponentStyles = styled(MovieDetailsStyles)`
   }
 
   @media (max-width: 700px) {
-    .seasons-details {
-      order: 5;
-    }
-
     .seasons {
       display: grid;
       gap: 8px;
@@ -211,14 +207,6 @@ export const TVShowSeasonsModalComponentStyles = styled(MovieDetailsStyles)`
       max-width: none;
       min-height: 48px;
       width: 100%;
-    }
-
-    > .header-container .movie-details > .buttons {
-      order: 3;
-    }
-
-    > .header-container .movie-details > .overview {
-      order: 4;
     }
 
     .seasons-details {

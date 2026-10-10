@@ -75,7 +75,6 @@ export function TVShowSeasonsModalComponent(
 
   return (
     <Modal
-      wrapClassName="media-details-modal"
       visible={visible}
       centered={true}
       onCancel={handleClose}

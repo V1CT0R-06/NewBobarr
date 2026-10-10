@@ -56,7 +56,6 @@ export function MovieDetailsComponent(props: MovieDetailsProps) {
       )}
 
       <Modal
-        wrapClassName="media-details-modal"
         centered={true}
         closable={false}
         destroyOnClose={true}
