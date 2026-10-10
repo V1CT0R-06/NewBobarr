@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { SearchStyles, Wrapper } from '../search/search.styles';
-import { Card, Skeleton, Empty, Pagination, Badge } from 'antd';
+import { Card, Skeleton, Empty, Pagination, Badge, Button } from 'antd';
+import { FilterOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
 import { DiscoverStyles } from './discover.styles';
 import { TMDBCardComponent } from '../tmdb-card/tmdb-card.component';
 import {
@@ -14,6 +15,7 @@ import { DiscoverFilterFormComponent } from './discover-filter-from.component';
 import dayjs from 'dayjs';
 
 export function DiscoverComponent() {
+  const [areFiltersOpen, setFiltersOpen] = useState(false);
   const [discover, { data, loading }] = useGetDiscoverLazyQuery();
   const { data: defaultUserParams } = useGetParamsQuery();
   const [filterParams, setFilterParams] = useState<GetDiscoverQueryVariables>({
@@ -41,6 +43,7 @@ export function DiscoverComponent() {
       }),
       ...rest,
     });
+    setFiltersOpen(false);
   };
 
   useEffect(() => {
@@ -79,8 +82,21 @@ export function DiscoverComponent() {
               />
             </div>
             <div className="wrapper">
+              <Button
+                className="discover--filter-toggle"
+                icon={<FilterOutlined />}
+                onClick={() => setFiltersOpen((open) => !open)}
+                aria-expanded={areFiltersOpen}
+                aria-controls="discover-filters"
+              >
+                {areFiltersOpen ? 'Hide filters' : 'Show filters'}
+                {areFiltersOpen ? <UpOutlined /> : <DownOutlined />}
+              </Button>
               <div className="flex">
-                <div className="discover--filter">
+                <div
+                  id="discover-filters"
+                  className={`discover--filter ${areFiltersOpen ? 'open' : ''}`}
+                >
                   <Card title="Filters" size="small">
                     <DiscoverFilterFormComponent
                       params={filterParams}
@@ -89,14 +105,7 @@ export function DiscoverComponent() {
                   </Card>
                 </div>
                 <div className="discover--result">
-                  <Card
-                    size="small"
-                    style={{
-                      minHeight: '794px',
-                      maxHeight: '794px',
-                      overflowY: 'scroll',
-                    }}
-                  >
+                  <Card className="discover--results-card" size="small">
                     <Skeleton active={true} loading={!data || loading}>
                       {data && hasNoSearchResults && (
                         <Empty description="No results... 😔" />

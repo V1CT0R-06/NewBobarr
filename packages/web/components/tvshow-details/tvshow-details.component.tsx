@@ -75,6 +75,7 @@ export function TVShowSeasonsModalComponent(
 
   return (
     <Modal
+      wrapClassName="media-details-modal"
       visible={visible}
       centered={true}
       onCancel={handleClose}
@@ -86,9 +87,14 @@ export function TVShowSeasonsModalComponent(
       bodyStyle={{ padding: 3, borderRadius: 4 }}
     >
       <TVShowSeasonsModalComponentStyles>
-        <div className="close-icon" onClick={onRequestClose}>
+        <button
+          type="button"
+          className="close-icon"
+          aria-label="Close TV show details"
+          onClick={onRequestClose}
+        >
           <FaRegWindowClose />
-        </div>
+        </button>
         <div className="header-container">
           <div className="header-background-overlay" />
           <div

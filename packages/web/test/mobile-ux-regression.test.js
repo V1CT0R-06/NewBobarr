@@ -21,6 +21,12 @@ const torrentStyles = read('components/manual-search/manual-search.styles.tsx');
 const episodeStyles = read(
   'components/tvshow-details/tvshow-details.styles.tsx'
 );
+const discover = read('components/discover/discover.component.tsx');
+const discoverStyles = read('components/discover/discover.styles.tsx');
+const movieDetails = read('components/movie-details/movie-details.component.tsx');
+const movieDetailsStyles = read(
+  'components/movie-details/movie-details.styles.tsx'
+);
 
 assert(
   navbar.includes('aria-expanded={isMenuOpen}') &&
@@ -64,6 +70,36 @@ assert(
   episodeStyles.includes('.episode-action-tag') &&
     episodeStyles.includes('min-height: 44px'),
   'Episode actions must remain touch-friendly'
+);
+assert(
+  discover.includes('areFiltersOpen') &&
+    discover.includes("areFiltersOpen ? 'Hide filters' : 'Show filters'") &&
+    discover.includes('aria-controls="discover-filters"'),
+  'Discover filters must be explicitly collapsible on phones'
+);
+assert(
+  discoverStyles.includes('.discover--filter-toggle') &&
+    discoverStyles.includes('&.open') &&
+    discoverStyles.includes('max-height: none') &&
+    discoverStyles.includes('overflow: visible'),
+  'Discover results must use the page scroll instead of a nested phone scroller'
+);
+assert(
+  movieDetails.includes('wrapClassName="media-details-modal"') &&
+    movieDetails.includes('aria-label="Close movie details"'),
+  'Media details must use an accessible full-screen mobile sheet'
+);
+assert(
+  movieDetailsStyles.includes('overscroll-behavior-y: contain') &&
+    movieDetailsStyles.includes('touch-action: pan-y') &&
+    movieDetailsStyles.includes('order: 3'),
+  'Media detail sheets must have one predictable touch scroll and early actions'
+);
+assert(
+  app.includes('.media-details-modal .ant-modal-body') &&
+    app.includes('height: 100dvh') &&
+    app.includes('overflow: hidden'),
+  'The modal shell must not compete with the media details scroll surface'
 );
 
 console.log('Mobile UX regression checks passed');

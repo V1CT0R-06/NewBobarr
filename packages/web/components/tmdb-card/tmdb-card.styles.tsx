@@ -105,6 +105,7 @@ export const TMDBCardStyles = styled.div`
         min-height: 44px;
         opacity: 1;
         padding: 8px;
+        pointer-events: none;
         top: auto;
 
         .anticon {

@@ -12,6 +12,16 @@ export const DiscoverStyles = styled.div`
     justify-content: space-evenly;
   }
 
+  .discover--filter-toggle {
+    display: none;
+  }
+
+  .discover--results-card {
+    max-height: 794px;
+    min-height: 794px;
+    overflow-y: auto;
+  }
+
   .discover {
     &--filter {
       flex: 2;
@@ -57,14 +67,41 @@ export const DiscoverStyles = styled.div`
   }
 
   @media (max-width: 768px) {
+    .wrapper {
+      padding: 0;
+    }
+
+    .discover--filter-toggle {
+      align-items: center;
+      display: flex;
+      justify-content: center;
+      margin-bottom: 12px;
+      width: 100%;
+
+      > .anticon:last-child {
+        margin-left: auto;
+      }
+    }
+
+    .discover--results-card {
+      max-height: none;
+      min-height: 0;
+      overflow: visible;
+    }
+
     .flex {
       display: block;
     }
 
     .discover {
       &--filter {
+        display: none;
         margin-bottom: 20px;
         margin-right: 0;
+
+        &.open {
+          display: block;
+        }
       }
 
       &--filter-entertainment {

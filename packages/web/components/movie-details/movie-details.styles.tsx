@@ -18,6 +18,9 @@ export const MovieDetailsStyles = styled.div`
   }
 
   .close-icon {
+    align-items: center;
+    background: transparent;
+    border: 0;
     position: absolute;
     color: #fff;
     cursor: pointer;
@@ -186,10 +189,16 @@ export const MovieDetailsStyles = styled.div`
   }
 
   @media (max-width: 700px) {
-    max-height: calc(100vh - 16px);
+    height: 100%;
+    max-height: none;
+    overscroll-behavior-y: contain;
+    overflow-y: auto;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
 
     .header-container {
-      min-height: 100%;
+      min-height: 0;
+      overflow: visible;
     }
 
     .header-background-overlay {
@@ -202,7 +211,8 @@ export const MovieDetailsStyles = styled.div`
 
     .header-content {
       display: block;
-      padding: 18px;
+      min-height: 100%;
+      padding: 56px 16px 24px;
     }
 
     .close-icon {
@@ -218,17 +228,14 @@ export const MovieDetailsStyles = styled.div`
     }
 
     .poster-container {
-      margin: 0 auto 18px;
-      max-width: 180px;
-      width: 45vw;
-
-      .poster-image {
-        width: 100%;
-      }
+      display: none;
     }
 
     .movie-details {
+      display: flex;
+      flex-direction: column;
       margin-left: 0;
+      min-width: 0;
     }
 
     .title {
@@ -236,6 +243,7 @@ export const MovieDetailsStyles = styled.div`
       flex-direction: column;
       font-size: 1.6em;
       line-height: 1.15;
+      order: 1;
 
       .year {
         margin-left: 0;
@@ -248,15 +256,20 @@ export const MovieDetailsStyles = styled.div`
       align-items: flex-start;
       flex-direction: column;
       gap: 10px;
+      order: 2;
     }
 
     .overview {
       font-size: 1em;
+      line-height: 1.5;
+      order: 4;
     }
 
     .buttons {
       flex-direction: column;
       gap: 8px;
+      margin-top: 16px;
+      order: 3;
 
       .btn {
         justify-content: center;
@@ -269,6 +282,10 @@ export const MovieDetailsStyles = styled.div`
       max-width: 100%;
       white-space: normal;
       overflow-wrap: anywhere;
+    }
+
+    .file-details {
+      order: 5;
     }
   }
 `;

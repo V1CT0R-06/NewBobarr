@@ -56,6 +56,7 @@ export function MovieDetailsComponent(props: MovieDetailsProps) {
       )}
 
       <Modal
+        wrapClassName="media-details-modal"
         centered={true}
         closable={false}
         destroyOnClose={true}
@@ -67,9 +68,14 @@ export function MovieDetailsComponent(props: MovieDetailsProps) {
         bodyStyle={{ padding: 3, borderRadius: 4 }}
       >
         <MovieDetailsStyles>
-          <div className="close-icon" onClick={onRequestClose}>
+          <button
+            type="button"
+            className="close-icon"
+            aria-label="Close movie details"
+            onClick={onRequestClose}
+          >
             <FaRegWindowClose />
-          </div>
+          </button>
           <div className="header-container">
             <div className="header-background-overlay" />
             <div
