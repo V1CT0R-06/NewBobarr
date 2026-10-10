@@ -526,9 +526,27 @@ const GlobalStyles = createGlobalStyle`
     }
 
     .ant-modal {
-      margin: 8px auto;
+      margin: 4px auto;
       top: 0;
-      width: calc(100vw - 16px) !important;
+      width: calc(100vw - 8px) !important;
+    }
+
+    .media-details-dialog .ant-modal-body {
+      max-height: calc(100vh - 8px);
+      max-height: calc(100dvh - 8px);
+      overscroll-behavior-y: contain;
+      overflow-y: auto;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .manual-search-dialog .ant-modal-body {
+      max-height: calc(100vh - 76px);
+      max-height: calc(100dvh - 76px);
+      overscroll-behavior-y: contain;
+      overflow-y: auto;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
     }
 
     .ant-modal-centered .ant-modal {

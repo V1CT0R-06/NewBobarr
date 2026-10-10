@@ -119,8 +119,10 @@ export function ManualSearchComponent(props: ManualSearchProps) {
 
   return (
     <Modal
+      className="manual-search-dialog"
       visible={true}
       destroyOnClose={true}
+      maskClosable={false}
       onCancel={handleClose}
       centered={true}
       width={960}

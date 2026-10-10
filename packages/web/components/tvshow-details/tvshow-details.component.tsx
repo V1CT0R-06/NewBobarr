@@ -75,11 +75,13 @@ export function TVShowSeasonsModalComponent(
 
   return (
     <Modal
+      className="media-details-dialog"
       visible={visible}
       centered={true}
       onCancel={handleClose}
       closable={false}
       destroyOnClose={true}
+      maskClosable={false}
       footer={null}
       width="80vw"
       style={{ maxWidth: 1280 }}

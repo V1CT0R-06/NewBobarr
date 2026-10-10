@@ -189,7 +189,8 @@ export const MovieDetailsStyles = styled.div`
   }
 
   @media (max-width: 700px) {
-    max-height: calc(100vh - 16px);
+    max-height: none;
+    overflow-y: visible;
 
     .header-container {
       min-height: 100%;

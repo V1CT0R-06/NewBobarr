@@ -56,9 +56,11 @@ export function MovieDetailsComponent(props: MovieDetailsProps) {
       )}
 
       <Modal
+        className="media-details-dialog"
         centered={true}
         closable={false}
         destroyOnClose={true}
+        maskClosable={false}
         visible={visible}
         onCancel={onRequestClose}
         footer={null}

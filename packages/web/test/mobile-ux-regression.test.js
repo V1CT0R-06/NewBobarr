@@ -85,18 +85,21 @@ assert(
   'Discover results must use the page scroll instead of a nested phone scroller'
 );
 assert(
-  movieDetails.includes('aria-label="Close movie details"'),
-  'Media details must keep an accessible close control'
+  movieDetails.includes('aria-label="Close movie details"') &&
+    movieDetails.includes('className="media-details-dialog"') &&
+    movieDetails.includes('maskClosable={false}'),
+  'Media details must keep an accessible close control and stable touch area'
 );
 assert(
-  movieDetailsStyles.includes('max-height: calc(100vh - 16px)') &&
+  movieDetailsStyles.includes('overflow-y: visible') &&
     movieDetailsStyles.includes('width: 45vw'),
-  'Media details must retain the proven portrait modal layout'
+  'Media details must retain the portrait layout without a nested scroller'
 );
 assert(
-  !app.includes('.media-details-modal') &&
-    !app.includes('.mobile-fullscreen-modal'),
-  'Phone modals must not use the broken forced full-screen shell'
+  app.includes('.media-details-dialog .ant-modal-body') &&
+    app.includes('max-height: calc(100dvh - 8px)') &&
+    app.includes('overscroll-behavior-y: contain'),
+  'Phone media dialogs must use one predictable scroll surface'
 );
 
 console.log('Mobile UX regression checks passed');
