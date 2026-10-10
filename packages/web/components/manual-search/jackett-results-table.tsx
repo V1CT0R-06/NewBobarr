@@ -249,10 +249,24 @@ function ManualDownloadMedia({
   };
 
   return isDownloading ? (
-    <LoadingOutlined />
+    <button
+      type="button"
+      className="torrent-download-button"
+      aria-label="Starting download"
+      disabled={true}
+    >
+      <LoadingOutlined />
+    </button>
   ) : (
     <Popover content={jackettResult.link}>
-      <DownloadOutlined style={{ cursor: 'pointer' }} onClick={handleClick} />
+      <button
+        type="button"
+        className="torrent-download-button"
+        aria-label={`Download ${jackettResult.title}`}
+        onClick={handleClick}
+      >
+        <DownloadOutlined />
+      </button>
     </Popover>
   );
 }

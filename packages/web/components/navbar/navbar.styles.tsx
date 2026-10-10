@@ -190,15 +190,15 @@ export const NavbarStyles = styled.div`
       transition: max-height 0.15s ease;
     }
 
-    .wrapper:focus-within .links,
-    .wrapper:hover .links {
-      max-height: 160px;
+    .links.open {
+      max-height: 176px;
+      padding-top: 4px;
     }
 
     .links a {
       margin: 0;
       min-height: 40px;
-      padding: 10px 8px;
+      padding: 12px 8px;
       text-align: center;
     }
   }

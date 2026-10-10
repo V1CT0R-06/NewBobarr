@@ -460,6 +460,71 @@ const GlobalStyles = createGlobalStyle`
   }
 
   @media (max-width: 700px) {
+    button,
+    [role='button'],
+    .ant-btn,
+    .ant-pagination-item,
+    .ant-pagination-prev,
+    .ant-pagination-next {
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    .ant-input,
+    .ant-input-affix-wrapper,
+    .ant-input-number,
+    .ant-picker,
+    .ant-select-selector {
+      font-size: 16px !important;
+      min-height: 44px !important;
+    }
+
+    .ant-input-affix-wrapper > input.ant-input {
+      min-height: auto !important;
+    }
+
+    .ant-select-selection-item,
+    .ant-select-selection-placeholder {
+      align-items: center;
+      display: flex;
+      line-height: 42px !important;
+    }
+
+    .ant-checkbox-wrapper,
+    .ant-radio-wrapper {
+      align-items: center;
+      display: inline-flex;
+      min-height: 40px;
+      padding-bottom: 4px;
+      padding-top: 4px;
+    }
+
+    .ant-modal-body {
+      max-height: calc(100dvh - 116px);
+      padding: 16px;
+    }
+
+    .ant-modal-footer {
+      padding: 10px 16px;
+    }
+
+    .ant-modal-footer .ant-btn {
+      min-width: 96px;
+    }
+
+    .ant-modal-close,
+    .ant-modal-close-x {
+      height: 44px;
+      line-height: 44px;
+      width: 44px;
+    }
+
+    .ant-notification {
+      margin-right: 8px;
+      max-width: calc(100vw - 16px);
+      width: calc(100vw - 16px);
+    }
+
     .ant-modal {
       margin: 8px auto;
       top: 0;

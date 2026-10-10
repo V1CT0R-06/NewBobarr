@@ -48,7 +48,12 @@ export function TMDBCardComponent(props: TMDBCardComponentProps) {
         />
       )}
 
-      <div className="poster--container" onClick={() => setIsModalOpen(true)}>
+      <button
+        type="button"
+        className="poster--container"
+        aria-label={`Open details for ${result.title}`}
+        onClick={() => setIsModalOpen(true)}
+      >
         <div
           className="poster"
           style={{
@@ -63,7 +68,7 @@ export function TMDBCardComponent(props: TMDBCardComponentProps) {
             <div className="action-label">See details</div>
           </>
         </div>
-      </div>
+      </button>
 
       <RatingComponent rating={result.voteAverage * 10} />
 

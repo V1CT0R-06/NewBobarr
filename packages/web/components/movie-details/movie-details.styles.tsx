@@ -205,6 +205,18 @@ export const MovieDetailsStyles = styled.div`
       padding: 18px;
     }
 
+    .close-icon {
+      align-items: center;
+      background: rgba(15, 23, 42, 0.78);
+      border-radius: 999px;
+      display: flex;
+      height: 44px;
+      justify-content: center;
+      right: 8px;
+      top: 8px;
+      width: 44px;
+    }
+
     .poster-container {
       margin: 0 auto 18px;
       max-width: 180px;
@@ -248,8 +260,8 @@ export const MovieDetailsStyles = styled.div`
 
       .btn {
         justify-content: center;
+        min-height: 44px;
         margin-right: 0;
-        min-height: 42px;
       }
     }
 

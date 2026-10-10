@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import cx from 'classnames';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -22,6 +22,7 @@ export function NavbarComponent() {
   const router = useRouter();
   const { data } = useGetParamsQuery();
   const { mode, toggleMode } = useContext(ThemeModeContext);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <NavbarStyles>
@@ -33,16 +34,28 @@ export function NavbarComponent() {
           <button
             type="button"
             className="mobile-menu-button"
-            aria-label="Open navigation menu"
+            aria-controls="mobile-navigation"
+            aria-expanded={isMenuOpen}
+            aria-label={`${isMenuOpen ? 'Close' : 'Open'} navigation menu`}
+            onClick={() => setIsMenuOpen((open) => !open)}
           >
             <MenuOutlined />
             Menu
           </button>
         </div>
-        <nav className="links" aria-label="Main navigation">
+        <nav
+          id="mobile-navigation"
+          className={cx('links', { open: isMenuOpen })}
+          aria-label="Main navigation"
+        >
           {links.map(([name, url]) => (
             <Link key={url} href={url} passHref={true}>
-              <a className={cx({ active: url === router.pathname })}>{name}</a>
+              <a
+                className={cx({ active: url === router.pathname })}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {name}
+              </a>
             </Link>
           ))}
         </nav>

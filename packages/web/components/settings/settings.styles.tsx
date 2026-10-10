@@ -80,7 +80,7 @@ export const SettingsComponentStyles = styled.div`
 
     .actions .ant-btn,
     .quality-preference .ant-btn {
-      min-height: 42px;
+      min-height: 44px;
     }
   }
 `;

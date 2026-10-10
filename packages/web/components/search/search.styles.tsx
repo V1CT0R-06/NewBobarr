@@ -131,10 +131,12 @@ export const SearchStyles = styled.div`
 
       &--input {
         font-size: 1em;
+        height: 44px;
         padding-right: 92px;
 
         &-submit {
           font-size: 1em;
+          height: 44px;
           min-width: 80px;
           padding-left: 12px;
           padding-right: 12px;

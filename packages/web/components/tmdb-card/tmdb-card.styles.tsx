@@ -7,12 +7,15 @@ export const TMDBCardStyles = styled.div`
   color: ${({ theme }) => theme.colors.text};
 
   .poster--container {
+    background: transparent;
+    border: 0;
     border-radius: 12px;
     cursor: pointer;
     height: 330px;
     margin-bottom: 24px;
     position: relative;
     overflow: hidden;
+    padding: 0;
     width: 220px;
 
     .poster,
@@ -91,6 +94,27 @@ export const TMDBCardStyles = styled.div`
       .overlay {
         height: 100%;
         width: 100%;
+      }
+
+      .overlay {
+        background: rgba(15, 23, 42, 0.82);
+        bottom: 0;
+        flex-direction: row;
+        gap: 8px;
+        height: auto;
+        min-height: 44px;
+        opacity: 1;
+        padding: 8px;
+        top: auto;
+
+        .anticon {
+          font-size: 1.1em;
+        }
+
+        .action-label {
+          font-size: 0.85em;
+          margin-top: 0;
+        }
       }
     }
 

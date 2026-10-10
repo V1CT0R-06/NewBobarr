@@ -227,7 +227,8 @@ export const TVShowSeasonsModalComponentStyles = styled(MovieDetailsStyles)`
       .season-replace {
         justify-content: center;
         margin-left: 0;
-        min-height: 40px;
+        min-height: 44px;
+        padding: 10px 12px;
       }
 
       .ant-table,
@@ -279,6 +280,20 @@ export const TVShowSeasonsModalComponentStyles = styled(MovieDetailsStyles)`
         flex-direction: column;
         gap: 8px;
         width: min(180px, 100%);
+      }
+
+      .episode-status-tag,
+      .episode-action-tag {
+        align-items: center;
+        display: inline-flex;
+        justify-content: center;
+        min-height: 40px;
+        padding: 8px 10px;
+        width: min(180px, 100%);
+      }
+
+      .episode-action-tag {
+        min-height: 44px;
       }
     }
   }
