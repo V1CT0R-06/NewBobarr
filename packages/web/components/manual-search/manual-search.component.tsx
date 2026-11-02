@@ -19,6 +19,7 @@ import { JackettResultsTable } from './jackett-results-table';
 
 interface ManualSearchProps {
   media: Media;
+  replaceExisting?: boolean;
   refetchQueries?: PureQueryOptions[];
   onRequestClose: () => void;
 }
@@ -166,6 +167,7 @@ export function ManualSearchComponent(props: ManualSearchProps) {
         <Skeleton active={true} loading={loading}>
           <JackettResultsTable
             media={props.media}
+            replaceExisting={props.replaceExisting}
             results={data?.results || []}
             onDownloadStarted={handleClose}
             refetchQueries={props.refetchQueries}

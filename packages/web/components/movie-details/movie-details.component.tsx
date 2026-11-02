@@ -51,6 +51,7 @@ export function MovieDetailsComponent(props: MovieDetailsProps) {
       {isSearchModalOpen && movie.__typename === 'EnrichedMovie' && (
         <ManualSearchComponent
           media={movie}
+          replaceExisting={true}
           onRequestClose={() => setSearchModalOpen(false)}
         />
       )}

@@ -4,7 +4,7 @@ import prettySize from 'prettysize';
 import { pick } from 'lodash';
 import { PureQueryOptions } from '@apollo/client';
 
-import { Table, Popover, Tag, notification } from 'antd';
+import { Table, Popover, Tag, notification, Modal } from 'antd';
 import { ColumnsType } from 'antd/lib/table';
 import { DownloadOutlined, LoadingOutlined } from '@ant-design/icons';
 
@@ -25,12 +25,14 @@ interface JackettResultTableProps {
   refetchQueries?: PureQueryOptions[];
   results: JackettFormattedResult[];
   media: Media;
+  replaceExisting?: boolean;
   onDownloadStarted?: () => void;
 }
 
 export function JackettResultsTable({
   media,
   onDownloadStarted,
+  replaceExisting = false,
   refetchQueries,
   results,
 }: JackettResultTableProps) {
@@ -87,6 +89,7 @@ export function JackettResultsTable({
         <ManualDownloadMedia
           jackettResult={row}
           media={media}
+          replaceExisting={replaceExisting}
           onDownloadStarted={onDownloadStarted}
           refetchQueries={refetchQueries || []}
         />
@@ -108,11 +111,13 @@ function ManualDownloadMedia({
   media,
   jackettResult,
   onDownloadStarted,
+  replaceExisting,
   refetchQueries,
 }: {
   media: Media;
   jackettResult: JackettFormattedResult;
   onDownloadStarted?: () => void;
+  replaceExisting: boolean;
   refetchQueries: PureQueryOptions[];
 }) {
   const [activeDownloadId, setActiveDownloadId] = React.useState<string | null>(
@@ -205,7 +210,7 @@ function ManualDownloadMedia({
   const isDownloading =
     Boolean(activeDownloadId) || loading1 || loading2 || loading3;
 
-  const handleClick = () => {
+  const startDownload = () => {
     if (isDownloadInFlight.current || isDownloading) {
       return;
     }
@@ -218,6 +223,7 @@ function ManualDownloadMedia({
         variables: {
           movieId: media.id!,
           jackettResult: jackettInput,
+          replaceExisting,
         },
       });
       return;
@@ -246,6 +252,23 @@ function ManualDownloadMedia({
 
     isDownloadInFlight.current = false;
     setActiveDownloadId(null);
+  };
+
+  const handleClick = () => {
+    if (!replaceExisting || media.__typename !== 'EnrichedMovie') {
+      startDownload();
+      return;
+    }
+
+    Modal.confirm({
+      title: `Replace ${media.title}?`,
+      content:
+        'The current torrent and any existing or partial movie files will be removed before the selected torrent starts.',
+      okText: 'Replace download',
+      okType: 'danger',
+      cancelText: 'Keep current download',
+      onOk: startDownload,
+    });
   };
 
   return isDownloading ? (

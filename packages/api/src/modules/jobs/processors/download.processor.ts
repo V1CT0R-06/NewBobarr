@@ -115,6 +115,7 @@ export class DownloadProcessor {
         tag: bestResult.tag.label,
         quality: bestResult.quality.label,
       },
+      false,
       null
     );
 

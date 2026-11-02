@@ -45,11 +45,14 @@ import { Torrent } from 'src/entities/torrent.entity';
 export function shouldKeepExistingActiveDownload({
   state,
   transmissionTorrentExists,
+  replacementRequested = false,
 }: {
   state: DownloadableMediaState;
   transmissionTorrentExists: boolean;
+  replacementRequested?: boolean;
 }) {
   return (
+    !replacementRequested &&
     state === DownloadableMediaState.DOWNLOADING && transmissionTorrentExists
   );
 }
@@ -407,6 +410,7 @@ export class LibraryService {
   public async downloadMovie(
     movieId: number,
     jackettResult: JackettInput,
+    replaceExisting: boolean,
     @TransactionManager() manager: EntityManager | null
   ) {
     this.logger.info('start download movie', { movieId });
@@ -424,6 +428,7 @@ export class LibraryService {
       shouldKeepExistingActiveDownload({
         state: movie.state,
         transmissionTorrentExists: Boolean(activeTorrent),
+        replacementRequested: replaceExisting,
       })
     ) {
       this.logger.info('movie download already active', {

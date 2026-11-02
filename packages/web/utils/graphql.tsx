@@ -423,6 +423,7 @@ export type MutationUpdateParamsArgs = {
 export type MutationDownloadMovieArgs = {
   jackettResult: JackettInput;
   movieId: Scalars['Int'];
+  replaceExisting?: Maybe<Scalars['Boolean']>;
 };
 
 
@@ -575,6 +576,7 @@ export type StartDownloadMissingMutation = (
 export type DownloadMovieMutationVariables = Exact<{
   movieId: Scalars['Int'];
   jackettResult: JackettInput;
+  replaceExisting?: Maybe<Scalars['Boolean']>;
 }>;
 
 
@@ -1172,8 +1174,12 @@ export type StartDownloadMissingMutationHookResult = ReturnType<typeof useStartD
 export type StartDownloadMissingMutationResult = Apollo.MutationResult<StartDownloadMissingMutation>;
 export type StartDownloadMissingMutationOptions = Apollo.BaseMutationOptions<StartDownloadMissingMutation, StartDownloadMissingMutationVariables>;
 export const DownloadMovieDocument = gql`
-    mutation downloadMovie($movieId: Int!, $jackettResult: JackettInput!) {
-  result: downloadMovie(movieId: $movieId, jackettResult: $jackettResult) {
+    mutation downloadMovie($movieId: Int!, $jackettResult: JackettInput!, $replaceExisting: Boolean = false) {
+  result: downloadMovie(
+    movieId: $movieId
+    jackettResult: $jackettResult
+    replaceExisting: $replaceExisting
+  ) {
     success
     message
   }

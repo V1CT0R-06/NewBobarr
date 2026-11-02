@@ -301,7 +301,7 @@ type Mutation {
   startScanLibraryJob: GraphQLCommonResponse!
   startFindNewEpisodesJob: GraphQLCommonResponse!
   startDownloadMissingJob: GraphQLCommonResponse!
-  downloadMovie(jackettResult: JackettInput!, movieId: Int!): GraphQLCommonResponse!
+  downloadMovie(jackettResult: JackettInput!, movieId: Int!, replaceExisting: Boolean = false): GraphQLCommonResponse!
   downloadSeason(jackettResult: JackettInput!, seasonNumber: Int!, tvShowTMDBId: Int!): GraphQLCommonResponse!
   downloadTVEpisode(jackettResult: JackettInput!, episodeId: Int!): GraphQLCommonResponse!
   setTVEpisodeMonitored(monitored: Boolean!, episodeId: Int!): GraphQLCommonResponse!

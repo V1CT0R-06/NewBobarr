@@ -110,6 +110,15 @@ function testManualDownloadRetryKeepsActiveTorrent() {
     shouldKeepExistingActiveDownload({
       state: DownloadableMediaState.DOWNLOADING,
       transmissionTorrentExists: true,
+      replacementRequested: true,
+    }),
+    false,
+    'an explicitly confirmed replacement must not be mistaken for a duplicate retry'
+  );
+  assert.strictEqual(
+    shouldKeepExistingActiveDownload({
+      state: DownloadableMediaState.DOWNLOADING,
+      transmissionTorrentExists: true,
     }),
     true,
     'manual retries must not remove/re-add an already active Transmission torrent'

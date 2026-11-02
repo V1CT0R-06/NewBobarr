@@ -19,6 +19,9 @@ const resultsTableSource = read(
 const manualSearchSource = read(
   'components/manual-search/manual-search.component.tsx'
 );
+const movieDetailsSource = read(
+  'components/movie-details/movie-details.component.tsx'
+);
 
 assert(
   !resultsTableSource.includes('awaitRefetchQueries: true'),
@@ -54,6 +57,15 @@ assert(
   resultsTableSource.includes('setActiveDownloadId(null)') &&
     resultsTableSource.includes('onError'),
   'duplicate submission guard should reset only when the real download mutation fails'
+);
+
+assert(
+  movieDetailsSource.includes('replaceExisting={true}') &&
+    resultsTableSource.includes("title: `Replace ${media.title}?`") &&
+    resultsTableSource.includes("okText: 'Replace download'") &&
+    resultsTableSource.includes("cancelText: 'Keep current download'") &&
+    resultsTableSource.includes('replaceExisting,'),
+  'movie replacement must be explicit, confirmed, and sent separately from an ordinary download'
 );
 
 console.log('Manual download regression checks passed');

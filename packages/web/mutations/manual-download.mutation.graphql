@@ -1,5 +1,13 @@
-mutation downloadMovie($movieId: Int!, $jackettResult: JackettInput!) {
-  result: downloadMovie(movieId: $movieId, jackettResult: $jackettResult) {
+mutation downloadMovie(
+  $movieId: Int!
+  $jackettResult: JackettInput!
+  $replaceExisting: Boolean = false
+) {
+  result: downloadMovie(
+    movieId: $movieId
+    jackettResult: $jackettResult
+    replaceExisting: $replaceExisting
+  ) {
     success
     message
   }

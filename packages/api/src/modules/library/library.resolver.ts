@@ -95,9 +95,16 @@ export class LibraryResolver {
   public async downloadMovie(
     @Args('movieId', { type: () => Int }) movieId: number,
     @Args('jackettResult', { type: () => JackettInput })
-    jackettResult: JackettInput
+    jackettResult: JackettInput,
+    @Args('replaceExisting', { nullable: true, defaultValue: false })
+    replaceExisting: boolean
   ) {
-    await this.libraryService.downloadMovie(movieId, jackettResult, null);
+    await this.libraryService.downloadMovie(
+      movieId,
+      jackettResult,
+      replaceExisting,
+      null
+    );
     return { success: true, message: 'MOVIE_DOWNLOAD_STARTED' };
   }
 
